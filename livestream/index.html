@@ -6,18 +6,21 @@
     <title>Livestream Player</title>
     <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
     <style>
-        body {
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
             background-color: #000;
+            overflow: hidden;
+        }
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
         }
         .video-js {
-            /* 设定播放器最大宽度 */
-            max-width: 90vw;
-            width: 100%;
+            width: 100vw;
+            height: 100vh;
         }
     </style>
 </head>
@@ -61,7 +64,59 @@
                     maxBufferSize: 90 * 1024 * 1024 
                 }
             }
-        }); 
+        });
+
+        // 记忆播放进度
+        player.ready(function() {
+            var savedTime = localStorage.getItem('videoProgress');
+            if (savedTime) {
+                player.currentTime(parseFloat(savedTime));
+            }
+            player.on('timeupdate', function() {
+                localStorage.setItem('videoProgress', player.currentTime());
+            });
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (player.paused()) {
+                    player.play();
+                } else {
+                    player.pause();
+                }
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                player.currentTime(Math.max(0, player.currentTime() - 5));
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                player.currentTime(player.currentTime() + 5);
+            } else if (e.code === 'KeyS') {
+                e.preventDefault();
+                takeScreenshot();
+            }
+        });
+
+        // 触摸滑动支持（手机端）
+        var startX = 0;
+        var endX = 0;
+        document.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+        });
+        document.addEventListener('touchend', function(e) {
+            endX = e.changedTouches[0].clientX;
+            var diff = startX - endX;
+            if (Math.abs(diff) > 50) { // 滑动阈值
+                if (diff > 0) {
+                    // 左滑，快退
+                    player.currentTime(Math.max(0, player.currentTime() - 5));
+                } else {
+                    // 右滑，快进
+                    player.currentTime(player.currentTime() + 5);
+                }
+            }
+        });
     </script>
 
 </body>
