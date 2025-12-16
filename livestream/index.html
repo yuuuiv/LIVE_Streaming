@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livestream Player</title>
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .video-js {
+            /* 设定播放器最大宽度 */
+            max-width: 90vw;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <video
+        id="live-player"
+        class="video-js vjs-default-skin vjs-big-play-centered"
+        controls
+        preload="auto"
+        width="1024"
+        height="576"
+        poster=""
+        data-setup='{}'
+    >
+        <source
+            src="https://vod.neofantasy.online/hls/livestream.m3u8"
+            type="application/x-mpegURL"
+        />
+        <p class="vjs-no-js">
+            要观看此视频，请启用 JavaScript，并考虑升级到支持 HTML5 视频的浏览器。
+        </p>
+    </video>
+
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <script src="https://vjs.zencdn.net/8.6.1/videojs-contrib-hls.min.js"></script>
+
+    <script>
+        // 初始化 Video.js 播放器并加入缓冲区优化配置
+        var player = videojs('live-player', {
+            // 确保自动预加载
+            preload: 'auto',
+            // 自动播放
+            autoplay: true,
+            
+            html5: {
+                hls: {
+                    // 【性能优化】设置最大缓冲区长度为 60 秒
+                    maxBufferLength: 90, 
+                    // 【性能优化】设置最大下载缓冲区为 60MB，防止内存溢出
+                    maxBufferSize: 90 * 1024 * 1024 
+                }
+            }
+        }); 
+    </script>
+
+</body>
+</html>
