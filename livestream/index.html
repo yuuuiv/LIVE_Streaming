@@ -95,6 +95,21 @@
             } else if (e.code === 'KeyS') {
                 e.preventDefault();
                 takeScreenshot();
+            } else if (e.code === 'ArrowUp') {
+                e.preventDefault();
+                var vol = Math.min(1, player.volume() + 0.1);
+                player.volume(vol);
+            } else if (e.code === 'ArrowDown') {
+                e.preventDefault();
+                var vol = Math.max(0, player.volume() - 0.1);
+                player.volume(vol);
+            } else if (e.code === 'KeyF' || e.code === 'Enter') {
+                e.preventDefault();
+                if (player.isFullscreen()) {
+                    player.exitFullscreen();
+                } else {
+                    player.requestFullscreen();
+                }
             }
         });
 
