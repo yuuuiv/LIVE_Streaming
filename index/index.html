@@ -7,6 +7,11 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        darkMode: 'class', // 允许通过给 <html> 标签添加 'dark' 类来切换模式
+    }
+    </script>
     
     <!-- ArtPlayer CSS & JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.css">
@@ -14,6 +19,8 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
     <style>
+        /* 增加平滑过渡效果 */
+        html, body { transition: background-color 0.3s, color 0.3s; }        
         .show-card {
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -35,22 +42,26 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen">
     
     <!-- Header -->
-    <header class="bg-gray-800 shadow-lg">
+    <header class="bg-white shadow-lg dark:bg-gray-800">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-bold text-purple-400">NeoFantasy Live</h1>
-                    <span class="text-sm text-gray-400">live.neofantasy.online</span>
+                    <h1 class="text-2xl font-bold text-purple-600 dark:text-purple-400">NeoFantasy Live</h1>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">live.neofantasy.online</span>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div id="user-status" class="px-4 py-2 bg-gray-700 rounded-lg">
+                    <button onclick="toggleTheme()" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                    
+                    <div id="user-status" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                         <span class="text-sm">身份: </span>
-                        <span id="user-role" class="font-semibold text-yellow-400">访客</span>
+                        <span id="user-role" class="font-semibold text-yellow-600 dark:text-yellow-400">访客</span>
                     </div>
-                    <button onclick="toggleUserDashboard()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition">
+                    <button onclick="toggleUserDashboard()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition">
                         我的订阅
                     </button>
                 </div>
@@ -63,10 +74,10 @@
         
         <!-- Player Section (Hidden by default) -->
         <div id="player-section" class="mb-8 hidden">
-            <div class="bg-gray-800 rounded-lg p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl">
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="now-playing-title" class="text-xl font-bold">正在播放...</h2>
-                    <button onclick="closePlayer()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition">
+                    <button onclick="closePlayer()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
                         关闭播放器
                     </button>
                 </div>
@@ -84,10 +95,10 @@
 
         <!-- User Dashboard (Hidden by default) -->
         <div id="user-dashboard" class="mt-8 hidden">
-            <div class="bg-gray-800 rounded-lg p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-bold">📦 我的订阅</h2>
-                    <button onclick="toggleUserDashboard()" class="text-gray-400 hover:text-white">
+                    <button onclick="toggleUserDashboard()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white">
                         ✕ 关闭
                     </button>
                 </div>
@@ -100,7 +111,7 @@
 
     <!-- Purchase Modal -->
     <div id="purchase-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
             <h3 class="text-2xl font-bold mb-4 text-center">🎟️ 购买门票</h3>
             <p class="text-gray-300 mb-6 text-center">扫描二维码购买此节目的观看权限</p>
             
@@ -143,8 +154,25 @@
 
         ];
 
-        // Initialize on page load
+        // --- 主题切换逻辑 ---
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').textContent = '☀️';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').textContent = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme(); // 初始化主题
             initializeUser();
             loadShows();
             updateUserDashboard();
@@ -162,8 +190,7 @@
             const purchasedShows = getPurchasedShows();
             if (purchasedShows.length > 0) {
                 document.getElementById('user-role').textContent = 'VIP - 已购买节目';
-                document.getElementById('user-role').classList.remove('text-yellow-400');
-                document.getElementById('user-role').classList.add('text-purple-400');
+                document.getElementById('user-role').className = 'font-semibold text-purple-600 dark:text-purple-400';
             }
         }
 
@@ -173,31 +200,30 @@
             grid.innerHTML = '';
             
             mockShows.forEach(show => {
-                const card = createShowCard(show);
-                grid.appendChild(card);
+                grid.appendChild(createShowCard(show));
             });
         }
 
         // Create show card element
         function createShowCard(show) {
             const card = document.createElement('div');
-            card.className = 'show-card bg-gray-800 rounded-lg overflow-hidden cursor-pointer relative';
+            card.className = 'show-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer relative shadow-md';
             card.onclick = () => handleShowClick(show.id);
             const imagePath = `/image/${show.title}.jpg`;
             
             card.innerHTML = `
                 <div class="relative">
                     <img src="${imagePath}" alt="${show.title}" class="w-full h-48 object-cover">
-                    ${show.isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-600 text-white">待开播</span>'}
+                    ${show.isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-500 text-white">待开播</span>'}
                 </div>
                 <div class="p-4">
                     <h3 class="text-lg font-bold mb-2">${show.title}</h3>
-                    <p class="text-gray-400 text-sm mb-3">${show.description}</p>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">${show.description}</p>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm ${show.requiresAuth ? 'text-yellow-400' : 'text-green-400'}">
-                            ${show.requiresAuth ? '🔒 需要购买' : '🆓 免费观看'}
+                        <span class="text-sm ${show.requiresAuth ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}">
+                            ${show.requiresAuth ? '🔒 需要身份组' : '🆓 免费观看'}
                         </span>
-                        <button class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm transition">
+                        <button class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white transition">
                             观看
                         </button>
                     </div>
@@ -412,5 +438,16 @@
             });
         }
     </script>
+<footer class="mt-12 py-8 border-t border-gray-200 dark:border-gray-800 transition-colors">
+    <div class="container mx-auto px-4 text-center">
+        <div class="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-4 text-xs text-gray-400 dark:text-gray-500">
+            <p>©2025 NeoFantasy Online. All rights reserved.</p>
+            <span class="hidden md:inline">|</span>
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" class="hover:text-purple-500 transition-colors">
+                沪ICP备2024092905号
+            </a>
+        </div>
+    </div>
+</footer>
 </body>
 </html>
