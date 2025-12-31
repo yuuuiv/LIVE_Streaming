@@ -1,123 +1,394 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Livestream Player</title>
-    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
+    <title>NeoFantasy Live</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- ArtPlayer CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.css">
+    <script src="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflow: hidden;
+        .show-card {
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .show-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
         }
-        .video-js {
-            width: 100vw;
-            height: 100vh;
+        .badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        #player-container {
+            display: none;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-900 text-white min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-purple-400">NeoFantasy Live</h1>
+                    <span class="text-sm text-gray-400">live.neofantasy.online</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="user-status" class="px-4 py-2 bg-gray-700 rounded-lg">
+                        <span class="text-sm">身份: </span>
+                        <span id="user-role" class="font-semibold text-yellow-400">访客</span>
+                    </div>
+                    <button onclick="toggleUserDashboard()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition">
+                        我的订阅
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    <video
-        id="live-player"
-        class="video-js vjs-default-skin vjs-big-play-centered"
-        controls
-        preload="auto"
-        width="1024"
-        height="576"
-        poster=""
-        data-setup='{}'
-    >
-        <source
-            src="https://hls.neofantasy.online/hls/livestream.m3u8"
-            type="application/x-mpegURL"
-        />
-        <p class="vjs-no-js">
-            要观看此视频，请启用 JavaScript，并考虑升级到支持 HTML5 视频的浏览器。
-        </p>
-    </video>
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        
+        <!-- Player Section (Hidden by default) -->
+        <div id="player-section" class="mb-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="now-playing-title" class="text-xl font-bold">正在播放...</h2>
+                    <button onclick="closePlayer()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition">
+                        关闭播放器
+                    </button>
+                </div>
+                <div id="player-container" class="w-full" style="height: 500px;"></div>
+            </div>
+        </div>
 
-    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-    <script src="https://vjs.zencdn.net/8.6.1/videojs-contrib-hls.min.js"></script>
+        <!-- Shows Grid -->
+        <div id="shows-section">
+            <h2 class="text-2xl font-bold mb-6">🎬 精彩直播</h2>
+            <div id="shows-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Shows will be dynamically loaded here -->
+            </div>
+        </div>
+
+        <!-- User Dashboard (Hidden by default) -->
+        <div id="user-dashboard" class="mt-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">📦 我的订阅</h2>
+                    <button onclick="toggleUserDashboard()" class="text-gray-400 hover:text-white">
+                        ✕ 关闭
+                    </button>
+                </div>
+                <div id="purchased-shows" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Purchased shows will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold mb-4 text-center">🎟️ 购买门票</h3>
+            <p class="text-gray-300 mb-6 text-center">扫描二维码购买此节目的观看权限</p>
+            
+            <!-- QR Code Placeholder -->
+            <div class="bg-white p-8 rounded-lg mb-6 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center mb-2">
+                        <svg class="w-32 h-32 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zm8-12v8h8V3h-8zm2 2h4v4h-4V5zm4 8h-2v2h2v-2zm-2 2h-2v2h2v-2zm2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 6h-2v2h2v-2zm-4 0h-2v2h2v-2zm-4-4h2v2h-2v-2z"/>
+                        </svg>
+                    </div>
+                    <p class="text-gray-600 text-sm">支付二维码</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="simulatePurchase()" class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition">
+                    ✓ 模拟购买成功
+                </button>
+                <button onclick="closePurchaseModal()" class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 初始化 Video.js 播放器并加入缓冲区优化配置
-        var player = videojs('live-player', {
-            // 确保自动预加载
-            preload: 'auto',
-            // 自动播放
-            autoplay: true,
+        // Configuration
+        const API_BASE_URL = 'https://neofantasy-api.vercel.app/';
+        const TOKEN_KEY = 'user_token';
+        const PURCHASED_SHOWS_KEY = 'purchased_shows';
+        
+        // Global variables
+        let artPlayer = null;
+        let currentShowId = null;
+        
+        // Mock shows data
+        const mockShows = [
+            { id: 'show_001', title: '音乐演唱会', description: '顶级歌手现场表演', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: true, requiresAuth: true },
+            { id: 'show_002', title: '电竞赛事', description: '全球电竞大赛直播', thumbnail: 'https://via.placeholder.com/400x300/3B82F6/ffffff?text=Gaming', isLive: true, requiresAuth: false },
+            { id: 'show_003', title: '脱口秀', description: '爆笑喜剧专场', thumbnail: 'https://via.placeholder.com/400x300/EF4444/ffffff?text=Comedy', isLive: false, requiresAuth: true },
+            { id: 'show_004', title: '烹饪教学', description: '大厨教你做美食', thumbnail: 'https://via.placeholder.com/400x300/10B981/ffffff?text=Cooking', isLive: true, requiresAuth: false },
+            { id: 'show_005', title: '健身课程', description: '专业健身指导', thumbnail: 'https://via.placeholder.com/400x300/F59E0B/ffffff?text=Fitness', isLive: false, requiresAuth: true },
+            { id: 'show_006', title: '科技讲座', description: '前沿科技分享', thumbnail: 'https://via.placeholder.com/400x300/6366F1/ffffff?text=Tech+Talk', isLive: true, requiresAuth: false },
+        ];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeUser();
+            loadShows();
+            updateUserDashboard();
+        });
+
+        // Initialize user session
+        function initializeUser() {
+            let token = localStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                token = 'token_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem(TOKEN_KEY, token);
+            }
             
-            html5: {
-                hls: {
-                    // 【性能优化】设置最大缓冲区长度为 60 秒
-                    maxBufferLength: 90, 
-                    // 【性能优化】设置最大下载缓冲区为 60MB，防止内存溢出
-                    maxBufferSize: 90 * 1024 * 1024 
-                }
+            // Check if user has VIP status
+            const purchasedShows = getPurchasedShows();
+            if (purchasedShows.length > 0) {
+                document.getElementById('user-role').textContent = 'VIP - 已购买节目';
+                document.getElementById('user-role').classList.remove('text-yellow-400');
+                document.getElementById('user-role').classList.add('text-purple-400');
             }
-        });
+        }
 
-        // 记忆播放进度
-        player.ready(function() {
-            var savedTime = localStorage.getItem('videoProgress');
-            if (savedTime) {
-                player.currentTime(parseFloat(savedTime));
-            }
-            player.on('timeupdate', function() {
-                localStorage.setItem('videoProgress', player.currentTime());
+        // Load shows into grid
+        function loadShows() {
+            const grid = document.getElementById('shows-grid');
+            grid.innerHTML = '';
+            
+            mockShows.forEach(show => {
+                const card = createShowCard(show);
+                grid.appendChild(card);
             });
-        });
+        }
 
-        // 键盘快捷键
-        document.addEventListener('keydown', function(e) {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (player.paused()) {
-                    player.play();
-                } else {
-                    player.pause();
-                }
-            } else if (e.code === 'ArrowLeft') {
-                e.preventDefault();
-                player.currentTime(Math.max(0, player.currentTime() - 5));
-            } else if (e.code === 'ArrowRight') {
-                e.preventDefault();
-                player.currentTime(player.currentTime() + 5);
-            } else if (e.code === 'KeyS') {
-                e.preventDefault();
-                takeScreenshot();
-            }
-        });
+        // Create show card element
+        function createShowCard(show) {
+            const card = document.createElement('div');
+            card.className = 'show-card bg-gray-800 rounded-lg overflow-hidden cursor-pointer relative';
+            card.onclick = () => handleShowClick(show.id);
+            
+            card.innerHTML = `
+                <div class="relative">
+                    <img src="${show.thumbnail}" alt="${show.title}" class="w-full h-48 object-cover">
+                    ${show.isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-600 text-white">录播</span>'}
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-bold mb-2">${show.title}</h3>
+                    <p class="text-gray-400 text-sm mb-3">${show.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm ${show.requiresAuth ? 'text-yellow-400' : 'text-green-400'}">
+                            ${show.requiresAuth ? '🔒 需要购买' : '🆓 免费观看'}
+                        </span>
+                        <button class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm transition">
+                            观看
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
 
-        // 触摸滑动支持（手机端）
-        var startX = 0;
-        var endX = 0;
-        document.addEventListener('touchstart', function(e) {
-            startX = e.touches[0].clientX;
-        });
-        document.addEventListener('touchend', function(e) {
-            endX = e.changedTouches[0].clientX;
-            var diff = startX - endX;
-            if (Math.abs(diff) > 50) { // 滑动阈值
-                if (diff > 0) {
-                    // 左滑，快退
-                    player.currentTime(Math.max(0, player.currentTime() - 5));
+        // Handle show click
+        async function handleShowClick(showId) {
+            currentShowId = showId;
+            const token = localStorage.getItem(TOKEN_KEY);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-stream?show_id=${showId}&user_token=${token}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    playStream(data.url, showId);
                 } else {
-                    // 右滑，快进
-                    player.currentTime(player.currentTime() + 5);
+                    showPurchaseModal(showId); // 没权限，去买票
                 }
+            } catch (e) {
+                alert("网络错误或服务器未响应");
             }
-        });
+        }
+
+        // Handle mock access logic (for demo when API is not available)
+        function handleMockAccess(show) {
+            const purchasedShows = getPurchasedShows();
+            
+            if (!show.requiresAuth || purchasedShows.includes(show.id)) {
+                // Use default stream URL for demo
+                playStream('https://hls.neofantasy.online/hls/livestream.m3u8', show.title);
+            } else {
+                showPurchaseModal(show.id);
+            }
+        }
+
+        // Play stream with ArtPlayer
+        function playStream(url, title) {
+            document.getElementById('player-section').classList.remove('hidden');
+            document.getElementById('now-playing-title').textContent = `正在播放: ${title}`;
+            document.getElementById('player-container').style.display = 'block';
+            
+            // Scroll to player
+            document.getElementById('player-section').scrollIntoView({ behavior: 'smooth' });
+            
+            // Destroy existing player if any
+            if (artPlayer) {
+                artPlayer.destroy();
+            }
+            
+            // Initialize ArtPlayer
+            artPlayer = new Artplayer({
+                container: '#player-container',
+                url: url,
+                type: 'm3u8',
+                customType: {
+                    m3u8: function(video, url) {
+                        if (Hls.isSupported()) {
+                            const hls = new Hls();
+                            hls.loadSource(url);
+                            hls.attachMedia(video);
+                        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                            video.src = url;
+                        }
+                    }
+                },
+                autoplay: true,
+                autoSize: true,
+                autoMini: true,
+                loop: false,
+                flip: true,
+                playbackRate: true,
+                aspectRatio: true,
+                setting: true,
+                hotkey: true,
+                pip: true,
+                mutex: true,
+                fullscreen: true,
+                fullscreenWeb: true,
+                subtitle: {
+                    url: '',
+                },
+                moreVideoAttr: {
+                    preload: 'auto',
+                },
+            });
+
+            artPlayer.on('ready', () => {
+                console.log('Player is ready');
+            });
+        }
+
+        // Close player
+        function closePlayer() {
+            if (artPlayer) {
+                artPlayer.destroy();
+                artPlayer = null;
+            }
+            document.getElementById('player-section').classList.add('hidden');
+            document.getElementById('player-container').style.display = 'none';
+        }
+
+        // Show purchase modal
+        function showPurchaseModal(showId) {
+            currentShowId = showId;
+            document.getElementById('purchase-modal').classList.remove('hidden');
+            document.getElementById('purchase-modal').classList.add('flex');
+        }
+
+        // Close purchase modal
+        function closePurchaseModal() {
+            document.getElementById('purchase-modal').classList.add('hidden');
+            document.getElementById('purchase-modal').classList.remove('flex');
+        }
+
+        // Simulate purchase (for demo)
+        function simulatePurchase() {
+            if (!currentShowId) return;
+            
+            const purchasedShows = getPurchasedShows();
+            if (!purchasedShows.includes(currentShowId)) {
+                purchasedShows.push(currentShowId);
+                localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(purchasedShows));
+            }
+            
+            // Update user status
+            document.getElementById('user-role').textContent = 'VIP - 已购买节目';
+            document.getElementById('user-role').classList.remove('text-yellow-400');
+            document.getElementById('user-role').classList.add('text-purple-400');
+            
+            closePurchaseModal();
+            updateUserDashboard();
+            
+            // Now play the show
+            const show = mockShows.find(s => s.id === currentShowId);
+            if (show) {
+                playStream('https://hls.neofantasy.online/hls/livestream.m3u8', show.title);
+            }
+        }
+
+        // Get purchased shows from localStorage
+        function getPurchasedShows() {
+            const stored = localStorage.getItem(PURCHASED_SHOWS_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        // Toggle user dashboard
+        function toggleUserDashboard() {
+            const dashboard = document.getElementById('user-dashboard');
+            dashboard.classList.toggle('hidden');
+            if (!dashboard.classList.contains('hidden')) {
+                updateUserDashboard();
+                dashboard.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Update user dashboard
+        function updateUserDashboard() {
+            const purchasedShows = getPurchasedShows();
+            const container = document.getElementById('purchased-shows');
+            
+            if (purchasedShows.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">您还没有购买任何节目</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            purchasedShows.forEach(showId => {
+                const show = mockShows.find(s => s.id === showId);
+                if (show) {
+                    const card = document.createElement('div');
+                    card.className = 'bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-600 transition';
+                    card.onclick = () => {
+                        toggleUserDashboard();
+                        handleShowClick(showId);
+                    };
+                    card.innerHTML = `
+                        <h4 class="font-bold mb-2">${show.title}</h4>
+                        <p class="text-sm text-gray-300 mb-2">${show.description}</p>
+                        <span class="text-xs text-green-400">✓ 已购买</span>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+        }
     </script>
-
 </body>
 </html>
