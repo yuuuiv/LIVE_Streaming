@@ -182,6 +182,7 @@
             });
         }
 
+<<<<<<< HEAD
         // Create show card element
         function createShowCard(show) {
             const card = document.createElement('div');
@@ -209,6 +210,43 @@
             
             return card;
         }
+=======
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (player.paused()) {
+                    player.play();
+                } else {
+                    player.pause();
+                }
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                player.currentTime(Math.max(0, player.currentTime() - 5));
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                player.currentTime(player.currentTime() + 5);
+            } else if (e.code === 'KeyS') {
+                e.preventDefault();
+                takeScreenshot();
+            } else if (e.code === 'ArrowUp') {
+                e.preventDefault();
+                var vol = Math.min(1, player.volume() + 0.1);
+                player.volume(vol);
+            } else if (e.code === 'ArrowDown') {
+                e.preventDefault();
+                var vol = Math.max(0, player.volume() - 0.1);
+                player.volume(vol);
+            } else if (e.code === 'KeyF' || e.code === 'Enter') {
+                e.preventDefault();
+                if (player.isFullscreen()) {
+                    player.exitFullscreen();
+                } else {
+                    player.requestFullscreen();
+                }
+            }
+        });
+>>>>>>> 6a39e33ebcc8bef7ca80fc520cf42f85b2238eb2
 
         // Handle show click
         async function handleShowClick(showId) {
