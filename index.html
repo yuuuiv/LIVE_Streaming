@@ -70,13 +70,13 @@
                         关闭播放器
                     </button>
                 </div>
-                <div id="player-container" class="w-full" style="height: 500px;"></div>
+                <div id="player-container" class="w-full"></div>
             </div>
         </div>
 
         <!-- Shows Grid -->
         <div id="shows-section">
-            <h2 class="text-2xl font-bold mb-6">🎬 精彩直播</h2>
+            <h2 class="text-2xl font-bold mb-6">🎬 播放列表</h2>
             <div id="shows-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 <!-- Shows will be dynamically loaded here -->
             </div>
@@ -139,12 +139,8 @@
         
         // Mock shows data
         const mockShows = [
-            { id: 'show_001', title: '音乐演唱会', description: '顶级歌手现场表演', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: true, requiresAuth: true },
-            { id: 'show_002', title: '电竞赛事', description: '全球电竞大赛直播', thumbnail: 'https://via.placeholder.com/400x300/3B82F6/ffffff?text=Gaming', isLive: true, requiresAuth: false },
-            { id: 'show_003', title: '脱口秀', description: '爆笑喜剧专场', thumbnail: 'https://via.placeholder.com/400x300/EF4444/ffffff?text=Comedy', isLive: false, requiresAuth: true },
-            { id: 'show_004', title: '烹饪教学', description: '大厨教你做美食', thumbnail: 'https://via.placeholder.com/400x300/10B981/ffffff?text=Cooking', isLive: true, requiresAuth: false },
-            { id: 'show_005', title: '健身课程', description: '专业健身指导', thumbnail: 'https://via.placeholder.com/400x300/F59E0B/ffffff?text=Fitness', isLive: false, requiresAuth: true },
-            { id: 'show_006', title: '科技讲座', description: '前沿科技分享', thumbnail: 'https://via.placeholder.com/400x300/6366F1/ffffff?text=Tech+Talk', isLive: true, requiresAuth: false },
+            { id: 'show_001', title: "Poppin'Party New Year LIVE「Happy BanG Year!!」", description: '2026年1月3日(土) 開演 18:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
+
         ];
 
         // Initialize on page load
@@ -182,17 +178,17 @@
             });
         }
 
-<<<<<<< HEAD
         // Create show card element
         function createShowCard(show) {
             const card = document.createElement('div');
             card.className = 'show-card bg-gray-800 rounded-lg overflow-hidden cursor-pointer relative';
             card.onclick = () => handleShowClick(show.id);
+            const imagePath = `/image/${show.title}.jpg`;
             
             card.innerHTML = `
                 <div class="relative">
-                    <img src="${show.thumbnail}" alt="${show.title}" class="w-full h-48 object-cover">
-                    ${show.isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-600 text-white">录播</span>'}
+                    <img src="${imagePath}" alt="${show.title}" class="w-full h-48 object-cover">
+                    ${show.isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-600 text-white">待开播</span>'}
                 </div>
                 <div class="p-4">
                     <h3 class="text-lg font-bold mb-2">${show.title}</h3>
@@ -210,43 +206,31 @@
             
             return card;
         }
-=======
+
         // 键盘快捷键
         document.addEventListener('keydown', function(e) {
+            if (!artPlayer) return; // 只在播放器存在时响应快捷键
+            
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (player.paused()) {
-                    player.play();
-                } else {
-                    player.pause();
-                }
+                artPlayer.toggle();
             } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
-                player.currentTime(Math.max(0, player.currentTime() - 5));
+                artPlayer.currentTime = Math.max(0, artPlayer.currentTime - 5);
             } else if (e.code === 'ArrowRight') {
                 e.preventDefault();
-                player.currentTime(player.currentTime() + 5);
-            } else if (e.code === 'KeyS') {
-                e.preventDefault();
-                takeScreenshot();
+                artPlayer.currentTime = artPlayer.currentTime + 5;
             } else if (e.code === 'ArrowUp') {
                 e.preventDefault();
-                var vol = Math.min(1, player.volume() + 0.1);
-                player.volume(vol);
+                artPlayer.volume = Math.min(1, artPlayer.volume + 0.1);
             } else if (e.code === 'ArrowDown') {
                 e.preventDefault();
-                var vol = Math.max(0, player.volume() - 0.1);
-                player.volume(vol);
+                artPlayer.volume = Math.max(0, artPlayer.volume - 0.1);
             } else if (e.code === 'KeyF' || e.code === 'Enter') {
                 e.preventDefault();
-                if (player.isFullscreen()) {
-                    player.exitFullscreen();
-                } else {
-                    player.requestFullscreen();
-                }
+                artPlayer.fullscreen = !artPlayer.fullscreen;
             }
         });
->>>>>>> 6a39e33ebcc8bef7ca80fc520cf42f85b2238eb2
 
         // Handle show click
         async function handleShowClick(showId) {
