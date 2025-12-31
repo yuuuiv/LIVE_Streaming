@@ -414,7 +414,8 @@
             const container = document.getElementById('purchased-shows');
             
             if (purchasedShows.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 col-span-full text-center py-8">您还没有购买任何节目</p>';
+                
+                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center py-8">您还没有购买任何节目</p>';
                 return;
             }
             
@@ -423,15 +424,17 @@
                 const show = mockShows.find(s => s.id === showId);
                 if (show) {
                     const card = document.createElement('div');
-                    card.className = 'bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-600 transition';
+                    
+                    card.className = 'bg-gray-100 dark:bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm';
                     card.onclick = () => {
                         toggleUserDashboard();
                         handleShowClick(showId);
                     };
+                    
                     card.innerHTML = `
                         <h4 class="font-bold mb-2">${show.title}</h4>
-                        <p class="text-sm text-gray-300 mb-2">${show.description}</p>
-                        <span class="text-xs text-green-400">✓ 已购买</span>
+                        <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">${show.description}</p>
+                        <span class="text-xs text-green-600 dark:text-green-400 font-medium">✓ 已购买</span>
                     `;
                     container.appendChild(card);
                 }
