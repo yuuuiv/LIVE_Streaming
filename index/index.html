@@ -40,6 +40,18 @@
         #player-container {
             display: none;
         }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen">
@@ -59,11 +71,26 @@
                     
                     <div id="user-status" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                         <span class="text-sm">身份: </span>
-                        <span id="user-role" class="font-semibold text-yellow-600 dark:text-yellow-400">访客</span>
+                        <span id="user-role" class="font-semibold text-yellow-600 dark:text-yellow-400">未登录</span>
                     </div>
-                    <button onclick="toggleUserDashboard()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition">
-                        我的订阅
-                    </button>
+                    
+                    <div id="auth-buttons" class="flex space-x-2">
+                        <button onclick="showLoginModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                            登录
+                        </button>
+                        <button onclick="showRegisterModal()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                            注册
+                        </button>
+                    </div>
+                    
+                    <div id="user-menu" class="hidden">
+                        <button onclick="toggleUserDashboard()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition">
+                            我的订阅
+                        </button>
+                        <button onclick="logout()" class="px-4 py-2 ml-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                            登出
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -109,49 +136,106 @@
         </div>
     </div>
 
-    <!-- Purchase Modal -->
-    <div id="purchase-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal-overlay">
         <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
-            <h3 class="text-2xl font-bold mb-4 text-center">🎟️ 购买门票</h3>
-            <p class="text-gray-300 mb-6 text-center">扫描二维码购买此节目的观看权限</p>
+            <h3 class="text-2xl font-bold mb-6 text-center">🔐 用户登录</h3>
             
-            <!-- QR Code Placeholder -->
-            <div class="bg-white p-8 rounded-lg mb-6 flex items-center justify-center">
-                <div class="text-center">
-                    <div class="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center mb-2">
-                        <svg class="w-32 h-32 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 8h8v8H3v-8zm2 2v4h4v-4H5zm8-12v8h8V3h-8zm2 2h4v4h-4V5zm4 8h-2v2h2v-2zm-2 2h-2v2h2v-2zm2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm2 6h-2v2h2v-2zm-4 0h-2v2h2v-2zm-4-4h2v2h-2v-2z"/>
-                        </svg>
+            <form id="login-form" onsubmit="event.preventDefault(); login();">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">用户名</label>
+                        <input type="text" id="login-username" required
+                               class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
-                    <p class="text-gray-600 text-sm">支付二维码</p>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">密码</label>
+                        <input type="password" id="login-password" required
+                               class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div id="login-error" class="text-red-500 text-sm hidden"></div>
+                    
+                    <div class="space-y-3">
+                        <button type="submit" 
+                                class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">
+                            登录
+                        </button>
+                        <button type="button" onclick="hideLoginModal()"
+                                class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                            取消
+                        </button>
+                        <div class="text-center text-sm text-gray-500">
+                            还没有账号？ <a href="javascript:void(0)" onclick="switchToRegister()" class="text-blue-500 hover:underline">立即注册</a>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal-overlay">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold mb-6 text-center">📝 用户注册</h3>
             
-            <div class="space-y-3">
-                <button onclick="simulatePurchase()" class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition">
-                    ✓ 模拟购买成功
-                </button>
-                <button onclick="closePurchaseModal()" class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
-                    取消
-                </button>
-            </div>
+            <form id="register-form" onsubmit="event.preventDefault(); register();">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">用户名</label>
+                        <input type="text" id="register-username" required
+                               class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">密码</label>
+                        <input type="password" id="register-password" required
+                               class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">确认密码</label>
+                        <input type="password" id="register-confirm-password" required
+                               class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div id="register-error" class="text-red-500 text-sm hidden"></div>
+                    <div id="register-success" class="text-green-500 text-sm hidden"></div>
+                    
+                    <div class="space-y-3">
+                        <button type="submit" 
+                                class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition">
+                            注册
+                        </button>
+                        <button type="button" onclick="hideRegisterModal()"
+                                class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                            取消
+                        </button>
+                        <div class="text-center text-sm text-gray-500">
+                            已有账号？ <a href="javascript:void(0)" onclick="switchToLogin()" class="text-blue-500 hover:underline">立即登录</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
         // Configuration
-        const API_BASE_URL = 'https://neofantasy-api.vercel.app/';
+        const API_BASE_URL = 'http://localhost:3000'; // 修改为后端服务器地址
         const TOKEN_KEY = 'user_token';
         const PURCHASED_SHOWS_KEY = 'purchased_shows';
+        const USERNAME_KEY = 'username';
         
         // Global variables
         let artPlayer = null;
         let currentShowId = null;
+        let purchasedShows = [];
         
         // Mock shows data
         const mockShows = [
             { id: 'show_001', title: "Poppin'Party New Year LIVE「Happy BanG Year!!」", description: '2026年1月3日(土) 開演 18:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
-
         ];
 
         // --- 主题切换逻辑 ---
@@ -173,24 +257,32 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTheme(); // 初始化主题
-            initializeUser();
+            checkAuthStatus();
             loadShows();
-            updateUserDashboard();
         });
 
-        // Initialize user session
-        function initializeUser() {
-            let token = localStorage.getItem(TOKEN_KEY);
-            if (!token) {
-                token = 'token_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem(TOKEN_KEY, token);
-            }
+        // Check authentication status
+        function checkAuthStatus() {
+            const token = localStorage.getItem(TOKEN_KEY);
+            const username = localStorage.getItem(USERNAME_KEY);
             
-            // Check if user has VIP status
-            const purchasedShows = getPurchasedShows();
-            if (purchasedShows.length > 0) {
-                document.getElementById('user-role').textContent = 'VIP - 已购买节目';
-                document.getElementById('user-role').className = 'font-semibold text-purple-600 dark:text-purple-400';
+            if (token && username) {
+                // User is logged in
+                document.getElementById('auth-buttons').classList.add('hidden');
+                document.getElementById('user-menu').classList.remove('hidden');
+                document.getElementById('user-role').textContent = username;
+                document.getElementById('user-role').classList.remove('text-yellow-400');
+                document.getElementById('user-role').classList.add('text-purple-400');
+                
+                // Load purchased shows
+                updatePurchasedShows();
+            } else {
+                // User is not logged in
+                document.getElementById('auth-buttons').classList.remove('hidden');
+                document.getElementById('user-menu').classList.add('hidden');
+                document.getElementById('user-role').textContent = '未登录';
+                document.getElementById('user-role').classList.remove('text-purple-400');
+                document.getElementById('user-role').classList.add('text-yellow-400');
             }
         }
 
@@ -204,11 +296,11 @@
             });
         }
 
-        // Create show card element
+        // Create show card element - 修复事件冒泡问题
         function createShowCard(show) {
             const card = document.createElement('div');
-            card.className = 'show-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer relative shadow-md';
-            card.onclick = () => handleShowClick(show.id);
+            card.className = 'show-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden relative shadow-md';
+            
             const imagePath = `/image/${show.title}.jpg`;
             
             card.innerHTML = `
@@ -221,14 +313,29 @@
                     <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">${show.description}</p>
                     <div class="flex justify-between items-center">
                         <span class="text-sm ${show.requiresAuth ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}">
-                            ${show.requiresAuth ? '🔒 需要身份组' : '🆓 免费观看'}
+                            ${show.requiresAuth ? '🔒 需要登录' : '🆓 免费观看'}
                         </span>
-                        <button class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white transition">
+                        <button class="watch-btn px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white transition" data-show-id="${show.id}">
                             观看
                         </button>
                     </div>
                 </div>
             `;
+            
+            // 为观看按钮单独添加事件监听器
+            const watchBtn = card.querySelector('.watch-btn');
+            watchBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡
+                handleShowClick(this.getAttribute('data-show-id'));
+            });
+            
+            // 卡片其他区域点击也触发观看
+            card.addEventListener('click', function(e) {
+                // 如果点击的不是按钮，则触发观看
+                if (!e.target.closest('.watch-btn')) {
+                    handleShowClick(show.id);
+                }
+            });
             
             return card;
         }
@@ -263,35 +370,45 @@
             currentShowId = showId;
             const token = localStorage.getItem(TOKEN_KEY);
             
+            // Check if user is logged in
+            if (!token) {
+                showLoginModal();
+                return;
+            }
+            
             try {
+                console.log('Requesting stream for show:', showId, 'with token:', token);
                 const response = await fetch(`${API_BASE_URL}/get-stream?show_id=${showId}&user_token=${token}`);
+                console.log('Response status:', response.status);
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Stream URL received:', data.url);
                     playStream(data.url, showId);
                 } else {
-                    showPurchaseModal(showId); // 没权限，去买票
+                    // Check if it's an authentication error
+                    if (response.status === 403) {
+                        alert('您没有权限观看此节目');
+                    } else if (response.status === 400) {
+                        alert('参数错误，请刷新页面重试');
+                    } else {
+                        const errorText = await response.text();
+                        console.error('Server error:', errorText);
+                        alert('获取视频流失败，请稍后重试。错误码: ' + response.status);
+                    }
                 }
             } catch (e) {
-                alert("网络错误或服务器未响应");
-            }
-        }
-
-        // Handle mock access logic (for demo when API is not available)
-        function handleMockAccess(show) {
-            const purchasedShows = getPurchasedShows();
-            
-            if (!show.requiresAuth || purchasedShows.includes(show.id)) {
-                // Use default stream URL for demo
-                playStream('https://hls.neofantasy.online/hls/livestream.m3u8', show.title);
-            } else {
-                showPurchaseModal(show.id);
+                console.error('Network error:', e);
+                alert("网络错误或服务器未响应。请检查您的网络连接。");
             }
         }
 
         // Play stream with ArtPlayer
-        function playStream(url, title) {
+        function playStream(url, showId) {
             document.getElementById('player-section').classList.remove('hidden');
-            document.getElementById('now-playing-title').textContent = `正在播放: ${title}`;
+            const show = mockShows.find(s => s.id === showId);
+            const showTitle = show ? show.title : '节目';
+            document.getElementById('now-playing-title').textContent = `正在播放: ${showTitle}`;
             document.getElementById('player-container').style.display = 'block';
             
             // Scroll to player
@@ -342,6 +459,11 @@
             artPlayer.on('ready', () => {
                 console.log('Player is ready');
             });
+            
+            artPlayer.on('error', (err) => {
+                console.error('Player error:', err);
+                alert('播放器错误: ' + err.message);
+            });
         }
 
         // Close player
@@ -354,48 +476,162 @@
             document.getElementById('player-container').style.display = 'none';
         }
 
-        // Show purchase modal
-        function showPurchaseModal(showId) {
-            currentShowId = showId;
-            document.getElementById('purchase-modal').classList.remove('hidden');
-            document.getElementById('purchase-modal').classList.add('flex');
-        }
+        // Login function
+        async function handleLoginSubmit() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!username || !password) return alert('请填写完整信息');
 
-        // Close purchase modal
-        function closePurchaseModal() {
-            document.getElementById('purchase-modal').classList.add('hidden');
-            document.getElementById('purchase-modal').classList.remove('flex');
-        }
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }) // 必须对应后端的 req.body.username
+                });
 
-        // Simulate purchase (for demo)
-        function simulatePurchase() {
-            if (!currentShowId) return;
-            
-            const purchasedShows = getPurchasedShows();
-            if (!purchasedShows.includes(currentShowId)) {
-                purchasedShows.push(currentShowId);
-                localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(purchasedShows));
-            }
-            
-            // Update user status
-            document.getElementById('user-role').textContent = 'VIP - 已购买节目';
-            document.getElementById('user-role').classList.remove('text-yellow-400');
-            document.getElementById('user-role').classList.add('text-purple-400');
-            
-            closePurchaseModal();
-            updateUserDashboard();
-            
-            // Now play the show
-            const show = mockShows.find(s => s.id === currentShowId);
-            if (show) {
-                playStream('https://hls.neofantasy.online/hls/livestream.m3u8', show.title);
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem(TOKEN_KEY, data.token);
+                    // 保存后端返回的真实已购列表
+                    localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(data.purchased_shows || []));
+                    location.reload();
+                } else {
+                    alert(data.error || '登录失败');
+                }
+            } catch (e) {
+                alert('无法连接到验证服务器');
             }
         }
 
-        // Get purchased shows from localStorage
-        function getPurchasedShows() {
+        // Register function
+        async function register() {
+            const username = document.getElementById('register-username').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            const errorElement = document.getElementById('register-error');
+            const successElement = document.getElementById('register-success');
+            
+            errorElement.classList.add('hidden');
+            successElement.classList.add('hidden');
+            
+            // Validation
+            if (!username || !password) {
+                errorElement.textContent = '用户名和密码不能为空';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                errorElement.textContent = '两次输入的密码不一致';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorElement.textContent = '密码长度至少6位';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                console.log('Attempting registration for user:', username);
+                const response = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('Register response status:', response.status);
+                const data = await response.json();
+                console.log('Register response data:', data);
+                
+                if (response.status === 201) {
+                    // Registration successful
+                    successElement.textContent = '注册成功！请登录';
+                    successElement.classList.remove('hidden');
+                    
+                    // Clear form
+                    document.getElementById('register-username').value = '';
+                    document.getElementById('register-password').value = '';
+                    document.getElementById('register-confirm-password').value = '';
+                    
+                    // Auto switch to login after 2 seconds
+                    setTimeout(() => {
+                        hideRegisterModal();
+                        showLoginModal();
+                        document.getElementById('login-username').value = username;
+                    }, 2000);
+                } else {
+                    errorElement.textContent = data.error || '注册失败';
+                    errorElement.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('Register error:', e);
+                errorElement.textContent = '网络错误，请检查连接';
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem(USERNAME_KEY);
+                localStorage.removeItem(PURCHASED_SHOWS_KEY);
+                closePlayer();
+                checkAuthStatus();
+                updateUserDashboard();
+                alert('已退出登录');
+            }
+        }
+
+        // Update purchased shows from localStorage
+        function updatePurchasedShows() {
             const stored = localStorage.getItem(PURCHASED_SHOWS_KEY);
-            return stored ? JSON.parse(stored) : [];
+            purchasedShows = stored ? JSON.parse(stored) : [];
+        }
+
+        // Get purchased shows
+        function getPurchasedShows() {
+            return purchasedShows;
+        }
+
+        // Modal functions
+        function showLoginModal() {
+            document.getElementById('login-modal').classList.add('active');
+        }
+        
+        function hideLoginModal() {
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+        
+        function showRegisterModal() {
+            document.getElementById('register-modal').classList.add('active');
+        }
+        
+        function hideRegisterModal() {
+            document.getElementById('register-modal').classList.remove('active');
+            document.getElementById('register-error').classList.add('hidden');
+            document.getElementById('register-success').classList.add('hidden');
+            document.getElementById('register-username').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-confirm-password').value = '';
+        }
+        
+        function switchToRegister() {
+            hideLoginModal();
+            showRegisterModal();
+        }
+        
+        function switchToLogin() {
+            hideRegisterModal();
+            showLoginModal();
         }
 
         // Toggle user dashboard
@@ -414,7 +650,6 @@
             const container = document.getElementById('purchased-shows');
             
             if (purchasedShows.length === 0) {
-                
                 container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center py-8">您还没有购买任何节目</p>';
                 return;
             }
@@ -440,17 +675,31 @@
                 }
             });
         }
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', (e) => {
+            const loginModal = document.getElementById('login-modal');
+            const registerModal = document.getElementById('register-modal');
+            
+            if (loginModal.classList.contains('active') && e.target === loginModal) {
+                hideLoginModal();
+            }
+            
+            if (registerModal.classList.contains('active') && e.target === registerModal) {
+                hideRegisterModal();
+            }
+        });
     </script>
-<footer class="mt-12 py-8 border-t border-gray-200 dark:border-gray-800 transition-colors">
-    <div class="container mx-auto px-4 text-center">
-        <div class="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-4 text-xs text-gray-400 dark:text-gray-500">
-            <p>©2025 NeoFantasy Online. All rights reserved.</p>
-            <span class="hidden md:inline">|</span>
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" class="hover:text-purple-500 transition-colors">
-                沪ICP备2024092905号
-            </a>
+    <footer class="mt-12 py-8 border-t border-gray-200 dark:border-gray-800 transition-colors">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-4 text-xs text-gray-400 dark:text-gray-500">
+                <p>©2025 NeoFantasy Online. All rights reserved.</p>
+                <span class="hidden md:inline">|</span>
+                <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" class="hover:text-purple-500 transition-colors">
+                    沪ICP备2024092905号
+                </a>
+            </div>
         </div>
-    </div>
-</footer>
+    </footer>
 </body>
 </html>
