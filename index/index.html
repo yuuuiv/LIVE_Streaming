@@ -236,7 +236,7 @@
         // shows data
         const Shows = [
             { id: 'test', title: "test", description: '测试用', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
-            
+
             { id: 'ppp_0103', title: "Poppin'Party New Year LIVE「Happy BanG Year!!」", description: '2026年1月3日(土) 開演 18:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
 
         ];
@@ -392,6 +392,8 @@
                     // Check if it's an authentication error
                     if (response.status === 403) {
                         alert('您没有权限观看此节目');
+                    } else if (response.status === 404) {
+                        alert('未找到视频资源，可能是尚未开始推流，请稍后重试');
                     } else if (response.status === 400) {
                         alert('参数错误，请刷新页面重试');
                     } else {
