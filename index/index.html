@@ -18,6 +18,9 @@
     <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
+    <!-- Busuanzi Analytics -->
+    <script async src="https://busuanzi.ibruce.top/busuanzi.pure.mini.js"></script>
+    
     <style>
         /* 增加平滑过渡效果 */
         html, body { transition: background-color 0.3s, color 0.3s; }        
@@ -362,6 +365,7 @@
             initTheme(); // 初始化主题
             updateAuthUI(); // 初始化认证状态显示
             loadShows();
+            loadBuildInfo(); // 加载构建信息
         });
 
         // 更新认证UI状态 - 根据localStorage读取token显示对应UI
@@ -764,6 +768,54 @@
             }
         }
 
+        // Load build info from GitHub API
+        async function loadBuildInfo() {
+            const owner = 'yuuuiv';
+            const repo = 'LIVE_Streaming';
+            
+            try {
+                // 获取最新的提交信息
+                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch commit info');
+                }
+                
+                const data = await response.json();
+                if (data.length > 0) {
+                    const commit = data[0];
+                    const commitHash = commit.sha.substring(0, 7);
+                    const commitDate = new Date(commit.commit.author.date);
+                    const formattedDate = commitDate.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // 更新提交哈希
+                    document.getElementById('commit-hash').textContent = commitHash;
+                    document.getElementById('commit-link').href = `https://github.com/${owner}/${repo}/commit/${commit.sha}`;
+                    
+                    // 更新构建时间
+                    document.getElementById('build-date').textContent = `Updated: ${formattedDate}`;
+                    
+                    // 添加提示文本
+                    document.getElementById('build-info').title = `点击查看完整提交信息\n${commit.commit.message.split('\n')[0]}`;
+                }
+            } catch (error) {
+                console.error('Error loading build info:', error);
+                // 失败时显示默认值
+                document.getElementById('commit-hash').textContent = 'Unknown';
+                document.getElementById('build-date').textContent = 'Updated: -';
+            }
+        }
+
         // Update user dashboard - 实时获取用户订阅，不依赖缓存
         async function updateUserDashboard() {
             const container = document.getElementById('purchased-shows');
@@ -843,12 +895,39 @@
     </script>
     <footer class="mt-8 md:mt-12 py-6 md:py-8 border-t border-gray-200 dark:border-gray-800 transition-colors">
         <div class="container mx-auto px-4 text-center">
+            <!-- 版权信息 -->
             <div class="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-4 text-xs text-gray-400 dark:text-gray-500">
-                <p>©2025 NeoFantasy Online. All rights reserved.</p>
+                <p>©2026 NeoFantasy Online. All rights reserved.</p>
                 <span class="hidden md:inline">|</span>
                 <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" class="hover:text-purple-500 transition-colors">
                     沪ICP备2024092905号
                 </a>
+            </div>
+            
+            <!-- 构建信息分割线 -->
+            <div class="my-3 md:my-4"></div>
+            
+            <!-- 构建信息和浏览统计 -->
+            <div class="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-3 text-xs text-gray-500 dark:text-gray-600">
+                <!-- 构建信息 -->
+                <div id="build-info" class="flex items-center space-x-1 cursor-pointer hover:text-purple-400 transition-colors" title="点击跳转到 GitHub Repository">
+                    <span>Build:</span>
+                    <a id="commit-link" href="https://github.com/yuuuiv/LIVE_Streaming" target="_blank" rel="noopener" class="font-mono text-xs hover:text-purple-400 transition-colors">
+                        <span id="commit-hash">Loading...</span>
+                    </a>
+                    <span>|</span>
+                    <span id="build-date">Loading...</span>
+                </div>
+                
+                <!-- PC 端分割线 -->
+                <span class="hidden md:inline">|</span>
+                
+                <!-- 浏览量统计 -->
+                <div id="busuanzi-container" class="flex items-center space-x-1">
+                    <span>本站总访问量：</span>
+                    <span id="busuanzi_value_site_pv" class="font-semibold">-</span>
+                    <span>次</span>
+                </div>
             </div>
         </div>
     </footer>
