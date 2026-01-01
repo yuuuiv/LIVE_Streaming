@@ -14,8 +14,8 @@
     </script>
     
     <!-- ArtPlayer CSS & JS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.css">
-    <script src="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.css">
+    <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
     <style>
@@ -205,11 +205,11 @@
                     
                     <div class="space-y-3">
                         <button type="submit" 
-                                class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition">
+                                class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
                             注册
                         </button>
                         <button type="button" onclick="hideRegisterModal()"
-                                class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                                class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
                             取消
                         </button>
                         <div class="text-center text-sm text-gray-500">
@@ -223,7 +223,7 @@
 
     <script>
         // Configuration
-        const API_BASE_URL = 'http://localhost:3000'; // 修改为后端服务器地址
+        const API_BASE_URL = 'https://neofantasy-api.vercel.app'; // 修改为后端服务器地址
         const TOKEN_KEY = 'user_token';
         const PURCHASED_SHOWS_KEY = 'purchased_shows';
         const USERNAME_KEY = 'username';
@@ -257,32 +257,32 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTheme(); // 初始化主题
-            checkAuthStatus();
+            updateAuthUI(); // 初始化认证状态显示
             loadShows();
         });
 
-        // Check authentication status
-        function checkAuthStatus() {
+        // 更新认证UI状态 - 根据localStorage读取token显示对应UI
+        function updateAuthUI() {
             const token = localStorage.getItem(TOKEN_KEY);
             const username = localStorage.getItem(USERNAME_KEY);
             
             if (token && username) {
-                // User is logged in
+                // 用户已登录：隐藏登录/注册按钮，显示用户菜单
                 document.getElementById('auth-buttons').classList.add('hidden');
                 document.getElementById('user-menu').classList.remove('hidden');
                 document.getElementById('user-role').textContent = username;
-                document.getElementById('user-role').classList.remove('text-yellow-400');
-                document.getElementById('user-role').classList.add('text-purple-400');
+                document.getElementById('user-role').classList.remove('text-yellow-600', 'dark:text-yellow-400');
+                document.getElementById('user-role').classList.add('text-purple-600', 'dark:text-purple-400');
                 
-                // Load purchased shows
+                // 加载已购节目列表
                 updatePurchasedShows();
             } else {
-                // User is not logged in
+                // 用户未登录：显示登录/注册按钮，隐藏用户菜单
                 document.getElementById('auth-buttons').classList.remove('hidden');
                 document.getElementById('user-menu').classList.add('hidden');
                 document.getElementById('user-role').textContent = '未登录';
-                document.getElementById('user-role').classList.remove('text-purple-400');
-                document.getElementById('user-role').classList.add('text-yellow-400');
+                document.getElementById('user-role').classList.remove('text-purple-600', 'dark:text-purple-400');
+                document.getElementById('user-role').classList.add('text-yellow-600', 'dark:text-yellow-400');
             }
         }
 
@@ -476,12 +476,17 @@
             document.getElementById('player-container').style.display = 'none';
         }
 
-        // Login function
-        async function handleLoginSubmit() {
+        // Login function - 登录函数，成功后持久化token和username
+        async function login() {
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
+            const loginError = document.getElementById('login-error');
             
-            if (!username || !password) return alert('请填写完整信息');
+            if (!username || !password) {
+                loginError.textContent = '请填写完整信息';
+                loginError.classList.remove('hidden');
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -492,15 +497,24 @@
 
                 const data = await response.json();
                 if (response.ok) {
+                    // 成功登录，保存token和username到localStorage
                     localStorage.setItem(TOKEN_KEY, data.token);
+                    localStorage.setItem(USERNAME_KEY, username); // 关键：保存用户名以实现持久化
                     // 保存后端返回的真实已购列表
                     localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(data.purchased_shows || []));
-                    location.reload();
+                    
+                    // 更新UI而不是刷新页面（可选：刷新更稳妥）
+                    hideLoginModal();
+                    updateAuthUI();
+                    alert('登录成功！');
+                    // 如果要刷新页面：location.reload();
                 } else {
-                    alert(data.error || '登录失败');
+                    loginError.textContent = data.error || '登录失败';
+                    loginError.classList.remove('hidden');
                 }
             } catch (e) {
-                alert('无法连接到验证服务器');
+                loginError.textContent = '无法连接到验证服务器';
+                loginError.classList.remove('hidden');
             }
         }
 
@@ -575,15 +589,24 @@
             }
         }
 
-        // Logout function
+        // Logout function - 登出函数，清除所有localStorage数据并更新UI
         function logout() {
             if (confirm('确定要退出登录吗？')) {
+                // 清除所有认证相关的localStorage数据
                 localStorage.removeItem(TOKEN_KEY);
                 localStorage.removeItem(USERNAME_KEY);
                 localStorage.removeItem(PURCHASED_SHOWS_KEY);
+                
+                // 关闭播放器
                 closePlayer();
-                checkAuthStatus();
+                
+                // 更新UI显示为未登录状态
+                updateAuthUI();
+                
+                // 更新用户仪表板
                 updateUserDashboard();
+                
+                // 提示用户
                 alert('已退出登录');
             }
         }
