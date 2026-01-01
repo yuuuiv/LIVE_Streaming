@@ -98,6 +98,13 @@
             background: rgb(124, 58, 237);
         }
 
+        .back-button-red {
+            background: #ef4444 !important;
+        }
+        .back-button-red:hover {
+            background: #dc2626 !important;
+        }
+
         /* 被踢下线遮罩 */
         #kick-overlay {
             display: none;
@@ -145,11 +152,11 @@
     <div id="kick-overlay">
         <h2>⚠ 您的账号已在其他设备登录</h2>
         <p>当前播放已停止，请重新登录后继续观看。</p>
-        <button class="back-button" style="background:#ef4444" onclick="goBack()">返回首页</button>
+        <button class="back-button back-button-red" type="button" onclick="goBack()">返回首页</button>
     </div>
     
     <script>
-        const API_BASE_URL = 'https://neofantasy-api.vercel.app';
+        const API_BASE_URL = 'https://api.neofantasy.online';
         let artPlayer = null;
         let heartbeatTimer = null;
         let sessionId = null;
