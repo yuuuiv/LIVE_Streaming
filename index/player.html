@@ -97,6 +97,29 @@
         .back-button:hover {
             background: rgb(124, 58, 237);
         }
+
+        /* 被踢下线遮罩 */
+        #kick-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            color: #f87171;
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem;
+        }
+        #kick-overlay h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+        #kick-overlay p {
+            color: #fecaca;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -117,10 +140,20 @@
     
     <!-- Player Container -->
     <div id="player-container"></div>
+
+    <!-- Kick Overlay -->
+    <div id="kick-overlay">
+        <h2>⚠ 您的账号已在其他设备登录</h2>
+        <p>当前播放已停止，请重新登录后继续观看。</p>
+        <button class="back-button" style="background:#ef4444" onclick="goBack()">返回首页</button>
+    </div>
     
     <script>
         const API_BASE_URL = 'https://neofantasy-api.vercel.app';
         let artPlayer = null;
+        let heartbeatTimer = null;
+        let sessionId = null;
+        let username = null;
         
         // 初始化主题 - 从 localStorage 读取
         function initTheme() {
@@ -223,10 +256,50 @@
                 );
             });
         }
+
+        function handleKicked(message = '您的账号已在其他设备登录，当前播放已停止。') {
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+            }
+            if (artPlayer) {
+                artPlayer.destroy();
+                artPlayer = null;
+            }
+            document.getElementById('kick-overlay').style.display = 'flex';
+            document.querySelector('#kick-overlay p').textContent = message;
+        }
+
+        async function startHeartbeat() {
+            if (!username || !sessionId) return;
+            heartbeatTimer = setInterval(async () => {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/heartbeat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, session_id: sessionId })
+                    });
+
+                    if (resp.status === 403) {
+                        handleKicked('您的账号已在其他设备登录，当前播放已停止。');
+                        return;
+                    }
+
+                    if (!resp.ok) {
+                        handleKicked('心跳校验失败，当前播放已停止。');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('heartbeat error:', err);
+                    handleKicked('心跳异常，当前播放已停止。');
+                }
+            }, 25000); // 25s
+        }
         
         // 获取视频流并鉴权
         async function loadStream() {
             const { show_id, user_token } = getUrlParams();
+            username = user_token;
             
             // 参数校验
             if (!show_id || !user_token) {
@@ -246,7 +319,13 @@
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Stream URL received:', data.url);
+                    sessionId = data.session_id;
+                    if (!sessionId) {
+                        showError('会话创建失败', '服务器未返回会话信息，请重试', '⚠️');
+                        return;
+                    }
                     initPlayer(data.url, show_id);
+                    startHeartbeat();
                 } else {
                     // 根据不同的错误码显示不同的错误信息
                     let errorTitle = '加载失败';
@@ -330,6 +409,10 @@
         
         // 页面关闭前清理
         window.addEventListener('beforeunload', () => {
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+            }
             if (artPlayer) {
                 artPlayer.destroy();
             }
