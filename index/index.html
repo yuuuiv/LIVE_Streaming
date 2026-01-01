@@ -233,9 +233,12 @@
         let currentShowId = null;
         let purchasedShows = [];
         
-        // Mock shows data
-        const mockShows = [
-            { id: 'show_001', title: "Poppin'Party New Year LIVE「Happy BanG Year!!」", description: '2026年1月3日(土) 開演 18:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
+        // shows data
+        const Shows = [
+            { id: 'test', title: "test", description: '测试用', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
+            
+            { id: 'ppp_0103', title: "Poppin'Party New Year LIVE「Happy BanG Year!!」", description: '2026年1月3日(土) 開演 18:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
+
         ];
 
         // --- 主题切换逻辑 ---
@@ -291,7 +294,7 @@
             const grid = document.getElementById('shows-grid');
             grid.innerHTML = '';
             
-            mockShows.forEach(show => {
+            Shows.forEach(show => {
                 grid.appendChild(createShowCard(show));
             });
         }
@@ -406,7 +409,7 @@
         // Play stream with ArtPlayer
         function playStream(url, showId) {
             document.getElementById('player-section').classList.remove('hidden');
-            const show = mockShows.find(s => s.id === showId);
+            const show = Shows.find(s => s.id === showId);
             const showTitle = show ? show.title : '节目';
             document.getElementById('now-playing-title').textContent = `正在播放: ${showTitle}`;
             document.getElementById('player-container').style.display = 'block';
@@ -679,7 +682,7 @@
             
             container.innerHTML = '';
             purchasedShows.forEach(showId => {
-                const show = mockShows.find(s => s.id === showId);
+                const show = Shows.find(s => s.id === showId);
                 if (show) {
                     const card = document.createElement('div');
                     
