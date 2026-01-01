@@ -764,36 +764,67 @@
             }
         }
 
-        // Update user dashboard
-        function updateUserDashboard() {
-            const purchasedShows = getPurchasedShows();
+        // Update user dashboard - 实时获取用户订阅，不依赖缓存
+        async function updateUserDashboard() {
             const container = document.getElementById('purchased-shows');
+            const username = localStorage.getItem(USERNAME_KEY);
             
-            if (purchasedShows.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center py-8">您还没有购买任何节目</p>';
+            if (!username) {
+                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center py-8">请登录后查看订阅</p>';
                 return;
             }
             
-            container.innerHTML = '';
-            purchasedShows.forEach(showId => {
-                const show = Shows.find(s => s.id === showId);
-                if (show) {
-                    const card = document.createElement('div');
-                    
-                    card.className = 'bg-gray-100 dark:bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm';
-                    card.onclick = () => {
-                        toggleUserDashboard();
-                        handleShowClick(showId);
-                    };
-                    
-                    card.innerHTML = `
-                        <h4 class="font-bold mb-2">${show.title}</h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">${show.description}</p>
-                        <span class="text-xs text-green-600 dark:text-green-400 font-medium">✓ 已购买</span>
-                    `;
-                    container.appendChild(card);
+            // 显示加载状态
+            container.innerHTML = '<p class="text-gray-400 dark:text-gray-500 col-span-full text-center py-8">正在同步订阅信息...</p>';
+            
+            try {
+                // 从后端实时获取用户的已购节目列表
+                const response = await fetch(`${API_BASE_URL}/api/user-purchases?username=${encodeURIComponent(username)}`);
+                
+                if (!response.ok) {
+                    container.innerHTML = '<p class="text-red-500 dark:text-red-400 col-span-full text-center py-8">获取订阅失败，请稍后重试</p>';
+                    return;
                 }
-            });
+                
+                const data = await response.json();
+                const purchasedShows = data.purchased_shows || [];
+                
+                // 更新 localStorage 缓存，确保其他地方的权限判断也是最新的
+                localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(purchasedShows));
+                
+                // 清空容器
+                container.innerHTML = '';
+                
+                // 如果没有购买任何节目
+                if (purchasedShows.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center py-8">您还没有购买任何节目</p>';
+                    return;
+                }
+                
+                // 遍历所有节目，如果已购买则显示
+                Shows.forEach(show => {
+                    if (purchasedShows.includes(show.id)) {
+                        const card = document.createElement('div');
+                        
+                        card.className = 'bg-gray-100 dark:bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm';
+                        card.onclick = () => {
+                            toggleUserDashboard();
+                            handleShowClick(show.id);
+                        };
+                        
+                        card.innerHTML = `
+                            <h4 class="font-bold mb-2">${show.title}</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-300 mb-2">${show.description}</p>
+                            <span class="text-xs text-green-600 dark:text-green-400 font-medium">✓ 已购买</span>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+                
+            } catch (err) {
+                console.error('获取订阅失败:', err);
+                container.innerHTML = '<p class="text-red-500 dark:text-red-400 col-span-full text-center py-8">获取订阅失败，请稍后重试</p>';
+            }
         }
         
         // Close modals when clicking outside
