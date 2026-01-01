@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放器 - NeoFantasy Live</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        darkMode: 'class',
+    }
+    </script>
+    
+    <!-- ArtPlayer CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.css">
+    <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        #player-container {
+            width: 100%;
+            height: 100%;
+        }
+        
+        #error-container {
+            display: none;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        #loading-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(139, 92, 246, 0.2);
+            border-top-color: rgb(139, 92, 246);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .error-message {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 1.5rem;
+        }
+        
+        .back-button {
+            padding: 0.75rem 2rem;
+            background: rgb(139, 92, 246);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .back-button:hover {
+            background: rgb(124, 58, 237);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    
+    <!-- Loading Container -->
+    <div id="loading-container">
+        <div class="spinner"></div>
+        <p class="mt-4 text-lg">正在加载视频...</p>
+    </div>
+    
+    <!-- Error Container -->
+    <div id="error-container">
+        <div class="error-icon">❌</div>
+        <div class="error-title" id="error-title">加载失败</div>
+        <div class="error-message" id="error-message">未知错误</div>
+        <button class="back-button" onclick="goBack()">返回首页</button>
+    </div>
+    
+    <!-- Player Container -->
+    <div id="player-container"></div>
+    
+    <script>
+        const API_BASE_URL = 'https://neofantasy-api.vercel.app';
+        let artPlayer = null;
+        
+        // 初始化主题 - 从 localStorage 读取
+        function initTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.body.classList.remove('bg-gray-900');
+                document.body.classList.add('bg-gray-50', 'text-gray-900');
+            }
+        }
+        
+        // 从 URL 获取参数
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                show_id: params.get('show_id'),
+                user_token: params.get('user_token')
+            };
+        }
+        
+        // 显示错误信息
+        function showError(title, message, icon = '❌') {
+            document.getElementById('loading-container').style.display = 'none';
+            document.getElementById('player-container').style.display = 'none';
+            
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.style.display = 'flex';
+            
+            document.querySelector('.error-icon').textContent = icon;
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+        }
+        
+        // 隐藏加载动画
+        function hideLoading() {
+            document.getElementById('loading-container').style.display = 'none';
+        }
+        
+        // 返回首页
+        function goBack() {
+            window.close();
+            // 如果 window.close() 失败（非脚本打开的窗口），则跳转回首页
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 100);
+        }
+        
+        // 初始化播放器
+        function initPlayer(streamUrl, showId) {
+            hideLoading();
+            document.getElementById('player-container').style.display = 'block';
+            
+            artPlayer = new Artplayer({
+                container: '#player-container',
+                url: streamUrl,
+                type: 'm3u8',
+                customType: {
+                    m3u8: function(video, url) {
+                        if (Hls.isSupported()) {
+                            const hls = new Hls();
+                            hls.loadSource(url);
+                            hls.attachMedia(video);
+                        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                            video.src = url;
+                        }
+                    }
+                },
+                autoplay: true,
+                autoSize: false,
+                autoMini: false,
+                loop: false,
+                flip: true,
+                playbackRate: true,
+                aspectRatio: true,
+                setting: true,
+                hotkey: true,
+                pip: true,
+                mutex: true,
+                fullscreen: true,
+                fullscreenWeb: true,
+                subtitle: {
+                    url: '',
+                },
+                moreVideoAttr: {
+                    preload: 'auto',
+                },
+            });
+
+            artPlayer.on('ready', () => {
+                console.log('Player is ready');
+            });
+            
+            artPlayer.on('error', (err) => {
+                console.error('Player error:', err);
+                showError(
+                    '播放失败',
+                    '视频加载失败，请检查网络连接或稍后重试',
+                    '⚠️'
+                );
+            });
+        }
+        
+        // 获取视频流并鉴权
+        async function loadStream() {
+            const { show_id, user_token } = getUrlParams();
+            
+            // 参数校验
+            if (!show_id || !user_token) {
+                showError(
+                    '参数错误',
+                    '缺少必要的参数，请从首页重新进入',
+                    '⚠️'
+                );
+                return;
+            }
+            
+            try {
+                console.log('Requesting stream for show:', show_id);
+                const response = await fetch(`${API_BASE_URL}/get-stream?show_id=${show_id}&user_token=${user_token}`);
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Stream URL received:', data.url);
+                    initPlayer(data.url, show_id);
+                } else {
+                    // 根据不同的错误码显示不同的错误信息
+                    let errorTitle = '加载失败';
+                    let errorMessage = '未知错误';
+                    let errorIcon = '❌';
+                    
+                    switch (response.status) {
+                        case 403:
+                            errorTitle = '权限不足';
+                            errorMessage = '您尚未购买此节目，或您的访问令牌已过期';
+                            errorIcon = '🔒';
+                            break;
+                        case 404:
+                            errorTitle = '视频未找到';
+                            errorMessage = '该视频暂未上线或已下架，请稍后重试';
+                            errorIcon = '🔍';
+                            break;
+                        case 400:
+                            errorTitle = '参数错误';
+                            errorMessage = '请求参数有误，请返回首页重新进入';
+                            errorIcon = '⚠️';
+                            break;
+                        case 500:
+                        case 502:
+                        case 503:
+                            errorTitle = '服务器错误';
+                            errorMessage = '服务器暂时无法响应，请稍后重试';
+                            errorIcon = '🔧';
+                            break;
+                        default:
+                            errorTitle = '加载失败';
+                            errorMessage = `请求失败，错误码: ${response.status}`;
+                            errorIcon = '❌';
+                    }
+                    
+                    showError(errorTitle, errorMessage, errorIcon);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                showError(
+                    '网络错误',
+                    '无法连接到服务器，请检查您的网络连接',
+                    '🌐'
+                );
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadStream();
+        });
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (!artPlayer) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                artPlayer.toggle();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                artPlayer.currentTime = Math.max(0, artPlayer.currentTime - 5);
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                artPlayer.currentTime = artPlayer.currentTime + 5;
+            } else if (e.code === 'ArrowUp') {
+                e.preventDefault();
+                artPlayer.volume = Math.min(1, artPlayer.volume + 0.1);
+            } else if (e.code === 'ArrowDown') {
+                e.preventDefault();
+                artPlayer.volume = Math.max(0, artPlayer.volume - 0.1);
+            } else if (e.code === 'KeyF') {
+                e.preventDefault();
+                artPlayer.fullscreen = !artPlayer.fullscreen;
+            } else if (e.code === 'Escape' && artPlayer.fullscreen) {
+                e.preventDefault();
+                artPlayer.fullscreen = false;
+            }
+        });
+        
+        // 页面关闭前清理
+        window.addEventListener('beforeunload', () => {
+            if (artPlayer) {
+                artPlayer.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

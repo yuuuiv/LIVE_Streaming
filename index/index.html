@@ -368,8 +368,8 @@
             }
         });
 
-        // Handle show click
-        async function handleShowClick(showId) {
+        // Handle show click - 在新标签页打开播放器
+        function handleShowClick(showId) {
             currentShowId = showId;
             const token = localStorage.getItem(TOKEN_KEY);
             
@@ -379,33 +379,9 @@
                 return;
             }
             
-            try {
-                console.log('Requesting stream for show:', showId, 'with token:', token);
-                const response = await fetch(`${API_BASE_URL}/get-stream?show_id=${showId}&user_token=${token}`);
-                console.log('Response status:', response.status);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Stream URL received:', data.url);
-                    playStream(data.url, showId);
-                } else {
-                    // Check if it's an authentication error
-                    if (response.status === 403) {
-                        alert('您没有权限观看此节目');
-                    } else if (response.status === 404) {
-                        alert('未找到视频资源，可能是尚未开始推流，请稍后重试');
-                    } else if (response.status === 400) {
-                        alert('参数错误，请刷新页面重试');
-                    } else {
-                        const errorText = await response.text();
-                        console.error('Server error:', errorText);
-                        alert('获取视频流失败，请稍后重试。错误码: ' + response.status);
-                    }
-                }
-            } catch (e) {
-                console.error('Network error:', e);
-                alert("网络错误或服务器未响应。请检查您的网络连接。");
-            }
+            // 在新标签页打开播放器页面，传递 show_id 和 user_token
+            const playerUrl = `player.html?show_id=${encodeURIComponent(showId)}&user_token=${encodeURIComponent(token)}`;
+            window.open(playerUrl, '_blank');
         }
 
         // Play stream with ArtPlayer
