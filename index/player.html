@@ -293,12 +293,12 @@
                     }
 
                     if (!resp.ok) {
-                        handleKicked('心跳校验失败，当前播放已停止。');
+                        handleKicked('校验失败，当前播放已停止。');
                         return;
                     }
                 } catch (err) {
                     console.error('heartbeat error:', err);
-                    handleKicked('心跳异常，当前播放已停止。');
+                    handleKicked('鉴权异常，当前播放已停止。');
                 }
             }, 25000); // 25s
         }

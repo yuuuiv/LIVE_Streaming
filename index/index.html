@@ -18,9 +18,6 @@
     <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
-    <!-- Busuanzi Analytics -->
-    <script async src="https://busuanzi.ibruce.top/busuanzi.pure.mini.js"></script>
-    
     <style>
         /* 增加平滑过渡效果 */
         html, body { transition: background-color 0.3s, color 0.3s; }        
@@ -361,11 +358,35 @@
             menu.classList.toggle('active');
         }
 
+        // Load site page views via Supabase backend
+        async function loadSitePV() {
+            const pvEl = document.getElementById('busuanzi_value_site_pv');
+            if (!pvEl) return;
+
+            pvEl.textContent = '-';
+            try {
+                const res = await fetch('https://api.neofantasy.online/api/stats/hit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (typeof data.count === 'number') {
+                    pvEl.textContent = data.count.toLocaleString();
+                    return;
+                }
+            } catch (err) {
+                console.error('Site PV load failed:', err);
+            }
+            pvEl.textContent = '当前不可访问';
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             initTheme(); // 初始化主题
             updateAuthUI(); // 初始化认证状态显示
             loadShows();
             loadBuildInfo(); // 加载构建信息
+            loadSitePV(); // 加载站点访问量
         });
 
         // 更新认证UI状态 - 根据localStorage读取token显示对应UI
