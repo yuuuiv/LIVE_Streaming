@@ -1,6 +1,4 @@
-# [NeoFantasy Live](https://live.neofantasy.online/index)
-
-## 欢迎来到 NeoFantasy Live
+## 欢迎来到 [NeoFantasy Live](https://live.neofantasy.online/index)
 
 ## 喜欢请星标助力主包找工作喵！
 
