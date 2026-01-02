@@ -320,13 +320,8 @@
         let currentShowId = null;
         let purchasedShows = [];
         
-        // shows data
-        const Shows = [
-            { id: 'ppp_0102', title: "「バンドリ！Poppin'Party ライブ直前お正月特番 2026」", description: '【试运行】2026年1月2日(金)21:00〜24:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: true, requiresAuth: false },
-
-            { id: 'ppp_0103', title: "Poppin'Party New Year LIVE「Happy BanG Year!!」", description: '2026年1月3日(土) 開演 18:00(JST)', thumbnail: 'https://via.placeholder.com/400x300/8B5CF6/ffffff?text=Music+Show', isLive: false, requiresAuth: true },
-
-        ];
+        // shows data - 将从 API 动态加载
+        let Shows = [];
 
         // --- 主题切换逻辑 ---
         function initTheme() {
@@ -384,7 +379,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTheme(); // 初始化主题
             updateAuthUI(); // 初始化认证状态显示
-            loadShows();
+            loadShows(); // 动态加载节目列表
             loadBuildInfo(); // 加载构建信息
             loadSitePV(); // 加载站点访问量
         });
@@ -430,14 +425,27 @@
             }
         }
 
-        // Load shows into grid
-        function loadShows() {
-            const grid = document.getElementById('shows-grid');
-            grid.innerHTML = '';
-            
-            Shows.forEach(show => {
-                grid.appendChild(createShowCard(show));
-            });
+        // Load shows into grid - 从 API 动态加载
+        async function loadShows() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/shows`);
+                if (!response.ok) {
+                    throw new Error('获取节目列表失败');
+                }
+                const data = await response.json();
+                Shows = data.shows || [];
+                
+                const grid = document.getElementById('shows-grid');
+                grid.innerHTML = '';
+                
+                Shows.forEach(show => {
+                    grid.appendChild(createShowCard(show));
+                });
+            } catch (error) {
+                console.error('加载节目列表错误:', error);
+                const grid = document.getElementById('shows-grid');
+                grid.innerHTML = '<div class="col-span-full text-center text-red-500 p-8">加载节目列表失败，请稍后重试</div>';
+            }
         }
 
         // Create show card element - 修复事件冒泡问题
@@ -509,18 +517,33 @@
             }
         });
 
-        // Handle show click - 在新标签页打开播放器
+        // Handle show click - 根据 requires_auth 决定是否需要登录
         function handleShowClick(showId) {
+            const show = Shows.find(s => s.id === showId);
+            if (!show) {
+                alert('节目不存在');
+                return;
+            }
+
             currentShowId = showId;
+            const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true;
             const token = localStorage.getItem(TOKEN_KEY);
             
-            // Check if user is logged in
+            // 如果节目不需要鉴权，直接允许观看
+            if (!requiresAuth) {
+                // 在新标签页打开播放器，无需 token
+                const playerUrl = `player.html?show_id=${encodeURIComponent(showId)}`;
+                window.open(playerUrl, '_blank');
+                return;
+            }
+            
+            // 需要鉴权的节目，检查是否登录
             if (!token) {
                 showLoginModal();
                 return;
             }
             
-            // 在新标签页打开播放器页面，传递 show_id 和 user_token
+            // 已登录，在新标签页打开播放器
             const playerUrl = `player.html?show_id=${encodeURIComponent(showId)}&user_token=${encodeURIComponent(token)}`;
             window.open(playerUrl, '_blank');
         }
