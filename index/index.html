@@ -453,19 +453,21 @@
             const card = document.createElement('div');
             card.className = 'show-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden relative shadow-md cursor-pointer';
             
-            const imagePath = `/image/${show.title}.jpg`;
+            const imagePath = `/image/${show.title}.jpg`; // 使用 .jpg 格式
+            const isLive = show.is_live || false; // 数据库字段：蛇形命名
+            const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true; // 数据库字段：蛇形命名
             
             card.innerHTML = `
                 <div class="relative show-card-image">
                     <img src="${imagePath}" alt="${show.title}" class="w-full h-full object-cover" loading="lazy">
-                    ${show.isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-500 text-white">待开播</span>'}
+                    ${isLive ? '<span class="badge bg-red-600 text-white animate-pulse">● 直播中</span>' : '<span class="badge bg-gray-500 text-white">待开播</span>'}
                 </div>
                 <div class="p-3 md:p-4">
                     <h3 class="text-base md:text-lg font-bold mb-2 line-clamp-2">${show.title}</h3>
-                    <p class="text-gray-500 dark:text-gray-400 text-xs md:text-sm mb-3 line-clamp-2">${show.description}</p>
+                    <p class="text-gray-500 dark:text-gray-400 text-xs md:text-sm mb-3 line-clamp-2">${show.description || ''}</p>
                     <div class="flex justify-between items-center gap-2">
-                        <span class="text-xs md:text-sm ${show.requiresAuth ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}">
-                            ${show.requiresAuth ? '🔒 带锁转播' : '🆓 开锁转播'}
+                        <span class="text-xs md:text-sm ${requiresAuth ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}">
+                            ${requiresAuth ? '🔒 带锁转播' : '🆓 开锁转播'}
                         </span>
                         <button class="watch-btn px-3 md:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white transition text-sm whitespace-nowrap" data-show-id="${show.id}">
                             观看
