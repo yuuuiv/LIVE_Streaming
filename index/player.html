@@ -308,11 +308,11 @@
             const { show_id, user_token } = getUrlParams();
             username = user_token;
             
-            // 参数校验
-            if (!show_id || !user_token) {
+            // 参数校验 - 只检查 show_id，免费节目允许无 user_token
+            if (!show_id) {
                 showError(
                     '参数错误',
-                    '缺少必要的参数，请从首页重新进入',
+                    '缺少节目 ID，请从首页重新进入',
                     '⚠️'
                 );
                 return;
@@ -320,19 +320,28 @@
             
             try {
                 console.log('Requesting stream for show:', show_id);
-                const response = await fetch(`${API_BASE_URL}/get-stream?show_id=${show_id}&user_token=${user_token}`);
+                // 构造请求 URL - 如果没有 user_token 就不传
+                const url = user_token 
+                    ? `${API_BASE_URL}/get-stream?show_id=${show_id}&user_token=${user_token}`
+                    : `${API_BASE_URL}/get-stream?show_id=${show_id}`;
+                
+                const response = await fetch(url);
                 console.log('Response status:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Stream URL received:', data.url);
                     sessionId = data.session_id;
-                    if (!sessionId) {
-                        showError('会话创建失败', '服务器未返回会话信息，请重试', '⚠️');
-                        return;
-                    }
+                    
+                    // 初始化播放器
                     initPlayer(data.url, show_id);
-                    startHeartbeat();
+                    
+                    // 只有当有 user_token 和 session_id 时才启动心跳检测
+                    if (username && sessionId) {
+                        startHeartbeat();
+                    } else {
+                        console.log('免费节目，跳过心跳检测');
+                    }
                 } else {
                     // 根据不同的错误码显示不同的错误信息
                     let errorTitle = '加载失败';
