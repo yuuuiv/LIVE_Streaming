@@ -37,6 +37,16 @@
             transition: background-color 0.3s, color 0.3s;
         }
         
+        /* 防止全屏时出现滚动条 */
+        #player-container:fullscreen,
+        #player-container:-webkit-full-screen,
+        #player-container:-moz-full-screen,
+        #player-container:-ms-fullscreen {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
         #player-container {
             width: 100%;
             height: 100%;
@@ -51,6 +61,17 @@
             flex-direction: column;
             text-align: center;
             padding: 2rem;
+            z-index: 9998;
+        }
+        
+        /* 全屏模式下的错误提示样式 */
+        #player-container:fullscreen #error-container,
+        #player-container:-webkit-full-screen #error-container,
+        #player-container:-moz-full-screen #error-container,
+        #player-container:-ms-fullscreen #error-container {
+            background: #000;
+            position: fixed;
+            inset: 0;
         }
         
         #loading-container {
@@ -119,15 +140,18 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(255, 255, 255, 0.85);
             color: #f87171;
             z-index: 50;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             text-align: center;
-            padding: 2rem;
+            padding: 2rem;            pointer-events: none;
         }
+        
+        #kick-overlay.active {
+            pointer-events: auto;        }
         #kick-overlay h2 {
             font-size: 1.75rem;
             margin-bottom: 0.75rem;
@@ -189,11 +213,30 @@
     </div>
     
     <script>
+        // 自动检测 API 地址 - 开发环境使用 localhost，生产环境使用生产 API
         const API_BASE_URL = 'https://api.neofantasy.online';
         let artPlayer = null;
         let heartbeatTimer = null;
         let sessionId = null;
         let username = null;
+        
+        // 更新控制栏上的音量显示
+        function updateVolumeDisplay() {
+            if (!artPlayer) return;
+            
+            const volumeControl = document.querySelector('.art-control-volume-display');
+            if (!volumeControl) return;
+            
+            const volume = artPlayer.volume;
+            const muted = artPlayer.muted;
+            
+            if (muted) {
+                volumeControl.textContent = '静音';
+            } else {
+                const percent = Math.round(volume * 100);
+                volumeControl.textContent = percent + '%';
+            }
+        }
         
         // 初始化主题 - 从 localStorage 读取
         function initTheme() {
@@ -330,6 +373,30 @@
 
             artPlayer.on('ready', () => {
                 console.log('Player is ready');
+                
+                // 初始化音量显示
+                updateVolumeDisplay();
+                
+                // 监听音量变化（包括原生控制栏的操作）
+                artPlayer.on('volumechange', () => {
+                    updateVolumeDisplay();
+                });
+                
+                // 监听全屏变化，确保进度条坐标同步
+                artPlayer.on('fullscreen', (isFullscreen) => {
+                    console.log('全屏状态变化:', isFullscreen);
+                    setTimeout(() => {
+                        artPlayer.resize();
+                    }, 100);
+                });
+                
+                // 监听网页全屏变化
+                artPlayer.on('fullscreenWeb', (isFullscreenWeb) => {
+                    console.log('网页全屏状态变化:', isFullscreenWeb);
+                    setTimeout(() => {
+                        artPlayer.resize();
+                    }, 100);
+                });
             });
             
             artPlayer.on('error', (err) => {
@@ -351,7 +418,9 @@
                 artPlayer.destroy();
                 artPlayer = null;
             }
-            document.getElementById('kick-overlay').style.display = 'flex';
+            const overlay = document.getElementById('kick-overlay');
+            overlay.style.display = 'flex';
+            overlay.classList.add('active');
             document.querySelector('#kick-overlay p').textContent = message;
         }
 
@@ -473,13 +542,80 @@
             loadStream();
         });
         
-        // ArtPlayer 内置快捷键说明：
-        // 空格：播放/暂停
-        // M：静音/取消静音
-        // ←/→：快退/快进 5 秒
-        // ↑/↓：调节音量
-        // F：全屏/退出全屏
-        // ESC：退出全屏
+        // 监听窗口大小变化，同步播放器尺寸
+        window.addEventListener('resize', () => {
+            if (artPlayer) {
+                artPlayer.resize();
+            }
+        });
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (!artPlayer) return;
+            
+            // 防止默认滚动行为
+            const preventScrollKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+            if (preventScrollKeys.includes(e.code)) {
+                e.preventDefault();
+            }
+            
+            // 空格键：切换播放/暂停
+            if (e.code === 'Space') {
+                artPlayer.toggle();
+            } 
+            // M键：切换静音
+            else if (e.code === 'KeyM') {
+                e.preventDefault();
+                artPlayer.muted = !artPlayer.muted;
+                // 立即更新显示（volumechange 事件也会触发，但这里确保即时反馈）
+                updateVolumeDisplay();
+                console.log('静音状态:', artPlayer.muted ? '已静音' : '已取消静音');
+            } 
+            // 左箭头：后退5秒
+            else if (e.code === 'ArrowLeft') {
+                const newTime = Math.max(0, artPlayer.currentTime - 5);
+                artPlayer.seek = newTime;
+                console.log('后醀5秒至:', Math.floor(newTime) + 's');
+            } 
+            // 右箭头：前进5秒
+            else if (e.code === 'ArrowRight') {
+                const newTime = Math.min(artPlayer.duration, artPlayer.currentTime + 5);
+                artPlayer.seek = newTime;
+                console.log('前进5秒至:', Math.floor(newTime) + 's');
+            } 
+            // 上箭头：增加音量5%
+            else if (e.code === 'ArrowUp') {
+                const newVolume = Math.min(1, artPlayer.volume + 0.05);
+                artPlayer.volume = newVolume;
+                // 立即更新显示（volumechange 事件也会触发，但这里确保即时反馈）
+                updateVolumeDisplay();
+                console.log('音量:', Math.round(newVolume * 100) + '%');
+            } 
+            // 下箭头：减少音量5%
+            else if (e.code === 'ArrowDown') {
+                const newVolume = Math.max(0, artPlayer.volume - 0.05);
+                artPlayer.volume = newVolume;
+                // 立即更新显示（volumechange 事件也会触发，但这里确保即时反馈）
+                updateVolumeDisplay();
+                console.log('音量:', Math.round(newVolume * 100) + '%');
+            } 
+            // F键：切换全屏
+            else if (e.code === 'KeyF') {
+                e.preventDefault();
+                artPlayer.fullscreen = !artPlayer.fullscreen;
+            } 
+            // Enter键（主键盘和数字键盘）：切换全屏
+            else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+                e.preventDefault();
+                artPlayer.fullscreen = !artPlayer.fullscreen;
+                console.log('全屏状态:', artPlayer.fullscreen ? '全屏' : '退出全屏');
+            }
+            // Escape键：退出全屏
+            else if (e.code === 'Escape' && artPlayer.fullscreen) {
+                e.preventDefault();
+                artPlayer.fullscreen = false;
+            }
+        }, { passive: false });
         
         // 页面关闭前清理
         window.addEventListener('beforeunload', () => {
