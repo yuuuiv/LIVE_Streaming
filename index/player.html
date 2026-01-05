@@ -11,7 +11,16 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon/favicon-96x96.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/favicon/site.webmanifest">
-    <meta name="theme-color" content="#fff3d6">
+    
+    <!-- Theme Color - for browsers that support it -->
+    <meta name="theme-color" content="#fff3d6" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)">
+    
+    <!-- Apple Mobile Web App -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Windows Tiles -->
     <meta name="msapplication-TileColor" content="#fff3d6">
     
     <!-- Tailwind CSS -->
@@ -37,14 +46,26 @@
             transition: background-color 0.3s, color 0.3s;
         }
         
+        /* 防止全屏时滚动条闪烁 */
+        html:fullscreen,
+        html:-webkit-full-screen,
+        html:-moz-full-screen,
+        html:-ms-fullscreen {
+            overflow: hidden !important;
+        }
+        
         /* 防止全屏时出现滚动条 */
         #player-container:fullscreen,
         #player-container:-webkit-full-screen,
         #player-container:-moz-full-screen,
         #player-container:-ms-fullscreen {
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 99999;
         }
         
         #player-container {
@@ -62,16 +83,45 @@
             text-align: center;
             padding: 2rem;
             z-index: 9998;
+            pointer-events: none;
         }
         
-        /* 全屏模式下的错误提示样式 */
+        /* 错误提示激活时允许交互 */
+        #error-container[style*="display: flex"] {
+            pointer-events: auto;
+        }
+        
+        /* 全屏模式下的错误提示样式 - 沉浸式背景 */
         #player-container:fullscreen #error-container,
         #player-container:-webkit-full-screen #error-container,
         #player-container:-moz-full-screen #error-container,
         #player-container:-ms-fullscreen #error-container {
-            background: #000;
+            background: #000000;
             position: fixed;
             inset: 0;
+            z-index: 100000;
+        }
+        
+        /* 全屏错误提示的文字大小调整 */
+        #player-container:fullscreen #error-container .error-icon,
+        #player-container:-webkit-full-screen #error-container .error-icon,
+        #player-container:-moz-full-screen #error-container .error-icon,
+        #player-container:-ms-fullscreen #error-container .error-icon {
+            font-size: 6rem;
+        }
+        
+        #player-container:fullscreen #error-container .error-title,
+        #player-container:-webkit-full-screen #error-container .error-title,
+        #player-container:-moz-full-screen #error-container .error-title,
+        #player-container:-ms-fullscreen #error-container .error-title {
+            font-size: 2.5rem;
+        }
+        
+        #player-container:fullscreen #error-container .error-message,
+        #player-container:-webkit-full-screen #error-container .error-message,
+        #player-container:-moz-full-screen #error-container .error-message,
+        #player-container:-ms-fullscreen #error-container .error-message {
+            font-size: 1.5rem;
         }
         
         #loading-container {
@@ -142,26 +192,55 @@
             inset: 0;
             background: rgba(255, 255, 255, 0.85);
             color: #f87171;
-            z-index: 50;
+            z-index: 9999;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             text-align: center;
-            padding: 2rem;            pointer-events: none;
+            padding: 2rem;
+            pointer-events: none;
+        }
+        
+        /* 全屏下的被踢下线遮罩 - 沉浸式背景 */
+        #player-container:fullscreen #kick-overlay,
+        #player-container:-webkit-full-screen #kick-overlay,
+        #player-container:-moz-full-screen #kick-overlay,
+        #player-container:-ms-fullscreen #kick-overlay {
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100000;
         }
         
         #kick-overlay.active {
-            pointer-events: auto;        }
+            pointer-events: auto;
+        }
+        
         #kick-overlay h2 {
             font-size: 1.75rem;
             margin-bottom: 0.75rem;
         }
+        
+        /* 全屏下的被踢下线提示文字放大 */
+        #player-container:fullscreen #kick-overlay h2,
+        #player-container:-webkit-full-screen #kick-overlay h2,
+        #player-container:-moz-full-screen #kick-overlay h2,
+        #player-container:-ms-fullscreen #kick-overlay h2 {
+            font-size: 2.5rem;
+        }
+        
         #kick-overlay p {
             color: #fecaca;
             margin-bottom: 1.5rem;
         }
+        
+        /* 全屏下的被踢下线内容放大 */
+        #player-container:fullscreen #kick-overlay p,
+        #player-container:-webkit-full-screen #kick-overlay p,
+        #player-container:-moz-full-screen #kick-overlay p,
+        #player-container:-ms-fullscreen #kick-overlay p {
+            font-size: 1.5rem;
+        }
 
-        /* ArtPlayer 进度条修夊，防止被截断 */
+        /* ArtPlayer 进度条修复，防止被截断 */
         .art-video-player {
             width: 100% !important;
             height: 100% !important;
@@ -180,9 +259,91 @@
             bottom: 2px !important;
         }
         
+        /* 进度条样式优化 - 增加悬停高度，便于点击 */
+        .art-control-progress {
+            cursor: pointer;
+            height: 5px;
+            transition: height 0.2s ease;
+        }
+        
+        /* 进度条悬停时增大高度 */
+        .art-control-progress:hover {
+            height: 8px;
+        }
+        
+        /* 全屏下的进度条优化 */
+        #player-container:fullscreen .art-control-progress,
+        #player-container:-webkit-full-screen .art-control-progress,
+        #player-container:-moz-full-screen .art-control-progress,
+        #player-container:-ms-fullscreen .art-control-progress {
+            height: 6px;
+        }
+        
+        #player-container:fullscreen .art-control-progress:hover,
+        #player-container:-webkit-full-screen .art-control-progress:hover,
+        #player-container:-moz-full-screen .art-control-progress:hover,
+        #player-container:-ms-fullscreen .art-control-progress:hover {
+            height: 10px;
+        }
+        
+        /* 缓存条颜色与进度条区分 */
+        .art-control-progress .art-control-progress-load {
+            background-color: rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        /* 当前进度条 */
+        .art-control-progress .art-control-progress-current {
+            background-color: #8b5cf6 !important;
+        }
+        
         /* 确保音量控件显示 */
         .art-control-volume {
             display: flex !important;
+        }
+        
+        /* 隐藏 ArtPlayer 默认的垂直音量面板（黑色方框） */
+        .art-volume-panel {
+            display: none !important;
+        }
+        
+        /* 自定义音量百分比显示在控制栏上 */
+        .art-control-volume-percentage {
+            display: flex;
+            align-items: center;
+            margin: 0 0.25rem;
+            padding: 0;
+            color: #fff;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: default;
+            -webkit-user-select: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+        
+        /* 全屏模式下控制栏显示的微调 */
+        #player-container:fullscreen .art-control-volume-percentage,
+        #player-container:-webkit-full-screen .art-control-volume-percentage,
+        #player-container:-moz-full-screen .art-control-volume-percentage,
+        #player-container:-ms-fullscreen .art-control-volume-percentage {
+            font-size: 1rem;
+            margin: 0 0.5rem;
+        }
+        
+        /* ArtPlayer 控制栏在全屏下的梯度背景 */
+        .art-video-player:fullscreen .art-controls,
+        .art-video-player:-webkit-full-screen .art-controls,
+        .art-video-player:-moz-full-screen .art-controls,
+        .art-video-player:-ms-fullscreen .art-controls {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent) !important;
+        }
+        
+        /* 加载容器在全屏下的层级 */
+        #loading-container:fullscreen,
+        #loading-container:-webkit-full-screen,
+        #loading-container:-moz-full-screen,
+        #loading-container:-ms-fullscreen {
+            z-index: 9997;
         }
     </style>
 </head>
@@ -219,23 +380,33 @@
         let heartbeatTimer = null;
         let sessionId = null;
         let username = null;
+        const VOLUME_STEP = 0.1; 
+        let volumePercentageControl = null;
         
-        // 更新控制栏上的音量显示
+        // 更新控制栏上的音量百分比显示
         function updateVolumeDisplay() {
-            if (!artPlayer) return;
+            if (!artPlayer || !volumePercentageControl) return;
             
-            const volumeControl = document.querySelector('.art-control-volume-display');
-            if (!volumeControl) return;
+            // 直接读取最新的播放器状态，避免事件参数造成的延迟
+            const currentVolume = artPlayer.volume;
+            const isMuted = artPlayer.muted;
             
-            const volume = artPlayer.volume;
-            const muted = artPlayer.muted;
-            
-            if (muted) {
-                volumeControl.textContent = '静音';
+            if (isMuted || currentVolume === 0) {
+                volumePercentageControl.textContent = '静音';
             } else {
-                const percent = Math.round(volume * 100);
-                volumeControl.textContent = percent + '%';
+                const percent = Math.round(currentVolume * 100);
+                volumePercentageControl.textContent = percent + '%';
             }
+        }
+
+        function adjustVolume(delta) {
+            if (!artPlayer) return;
+            // 使用 Math.round 确保音量步进对齐到 0.1 的倍数（10% 的倍数）
+            // 公式：Math.round((current + delta) * 10) / 10
+            const nextVolume = Math.min(1, Math.max(0, Math.round((artPlayer.volume + delta) * 10) / 10));
+            artPlayer.volume = nextVolume;
+            updateVolumeDisplay();
+            console.log('音量已调整至:', Math.round(nextVolume * 100) + '%');
         }
         
         // 初始化主题 - 从 localStorage 读取
@@ -310,7 +481,7 @@
                 },
                 // 基本设置
                 autoplay: true,
-                autoSize: false,
+                autoSize: true,  // 启用自动尺寸同步
                 autoMini: false,
                 loop: false,
                 volume: 0.7,
@@ -322,11 +493,14 @@
                 aspectRatio: true,
                 screenshot: true,
                 setting: true,
-                hotkey: true,  // 开启内置快捷键
+                hotkey: false,  // 禁用内置快捷键，使用自定义键盘监听器
                 pip: true,
                 mutex: true,
                 fullscreen: true,
                 fullscreenWeb: true,
+                
+                // 禁用原生提示通知（仅保留自定义音量显示）
+                notices: false,
                 
                 // 音量控件
                 volume: 0.7,
@@ -366,6 +540,28 @@
                     },
                 ],
                 
+                // 自定义控制栏 - 在音量图标右侧显示音量百分比
+                // position: 'left' 位置在左侧，index: 11 确保在音量图标（index 10）之后
+                controls: [
+                    {
+                        position: 'left',
+                        index: 11,
+                        html: '<div class="art-control-volume-percentage">--</div>',
+                        name: 'volumePercentage',
+                        tooltip: '当前音量',
+                        mounted($control) {
+                            // mounted 生命周期：在控制项挂载后立即初始化音量显示
+                            volumePercentageControl = $control.querySelector('.art-control-volume-percentage');
+                            if (volumePercentageControl) {
+                                // 确保获取到最新的音量值
+                                setTimeout(() => {
+                                    updateVolumeDisplay();
+                                }, 50);
+                            }
+                        }
+                    }
+                ],
+                
                 // 移动端优化
                 autoOrientation: true,
                 lock: true,  // 移动端锁屏功能
@@ -374,28 +570,60 @@
             artPlayer.on('ready', () => {
                 console.log('Player is ready');
                 
-                // 初始化音量显示
-                updateVolumeDisplay();
+                // 在 ready 阶段，volumePercentageControl 可能还未通过 mounted 回调初始化
+                // 这里作为备用方案确保获取正确的引用
+                if (!volumePercentageControl) {
+                    volumePercentageControl = document.querySelector('.art-control-volume-percentage');
+                }
+                
+                // 强制初始化音量显示 - 确保立即显示实际音量值，防止显示为 --
+                // 使用 setTimeout 确保 DOM 完全就绪
+                setTimeout(() => {
+                    if (volumePercentageControl && artPlayer) {
+                        updateVolumeDisplay();
+                        console.log('强制初始化音量百分比:', volumePercentageControl.textContent);
+                    }
+                }, 100);
                 
                 // 监听音量变化（包括原生控制栏的操作）
-                artPlayer.on('volumechange', () => {
+                // video:volumechange 事件在音量滑块变化、按键调整时触发
+                artPlayer.on('video:volumechange', () => {
+                    console.log('音量变化事件触发，当前音量:', Math.round(artPlayer.volume * 100) + '%');
+                    updateVolumeDisplay();
+                });
+                
+                // 监听静音状态变化
+                artPlayer.on('setMuted', () => {
+                    console.log('静音状态变化:', artPlayer.muted ? '已静音' : '已取消静音');
                     updateVolumeDisplay();
                 });
                 
                 // 监听全屏变化，确保进度条坐标同步
                 artPlayer.on('fullscreen', (isFullscreen) => {
-                    console.log('全屏状态变化:', isFullscreen);
+                    console.log('全屏状态:', isFullscreen ? '已进入全屏' : '已退出全屏');
+                    // 防止滚动条闪烁
+                    document.documentElement.style.overflow = isFullscreen ? 'hidden' : 'auto';
+                    // 强制调整播放器尺寸和进度条坐标
                     setTimeout(() => {
                         artPlayer.resize();
-                    }, 100);
+                    }, 50);
+                    setTimeout(() => {
+                        artPlayer.resize();
+                    }, 150);
                 });
                 
                 // 监听网页全屏变化
                 artPlayer.on('fullscreenWeb', (isFullscreenWeb) => {
-                    console.log('网页全屏状态变化:', isFullscreenWeb);
+                    console.log('网页全屏状态:', isFullscreenWeb ? '已进入网页全屏' : '已退出网页全屏');
+                    // 防止滚动条闪烁
+                    document.documentElement.style.overflow = isFullscreenWeb ? 'hidden' : 'auto';
+                    // 强制调整播放器尺寸和进度条坐标
                     setTimeout(() => {
                         artPlayer.resize();
-                    }, 100);
+                    }, 50);
+                    setTimeout(() => {
+                        artPlayer.resize();
+                    }, 150);
                 });
             });
             
@@ -545,7 +773,11 @@
         // 监听窗口大小变化，同步播放器尺寸
         window.addEventListener('resize', () => {
             if (artPlayer) {
+                // 多次调用 resize 以确保进度条坐标完全同步
                 artPlayer.resize();
+                setTimeout(() => {
+                    artPlayer.resize();
+                }, 100);
             }
         });
         
@@ -573,47 +805,45 @@
             } 
             // 左箭头：后退5秒
             else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
                 const newTime = Math.max(0, artPlayer.currentTime - 5);
                 artPlayer.seek = newTime;
-                console.log('后醀5秒至:', Math.floor(newTime) + 's');
+                console.log('后退5秒至:', Math.floor(newTime) + 's');
             } 
             // 右箭头：前进5秒
             else if (e.code === 'ArrowRight') {
+                e.preventDefault();
                 const newTime = Math.min(artPlayer.duration, artPlayer.currentTime + 5);
                 artPlayer.seek = newTime;
                 console.log('前进5秒至:', Math.floor(newTime) + 's');
             } 
-            // 上箭头：增加音量5%
+            // 上箭头：增加音量10%
             else if (e.code === 'ArrowUp') {
-                const newVolume = Math.min(1, artPlayer.volume + 0.05);
-                artPlayer.volume = newVolume;
-                // 立即更新显示（volumechange 事件也会触发，但这里确保即时反馈）
-                updateVolumeDisplay();
-                console.log('音量:', Math.round(newVolume * 100) + '%');
+                adjustVolume(VOLUME_STEP);
+                console.log('音量:', Math.round(artPlayer.volume * 100) + '%');
             } 
-            // 下箭头：减少音量5%
+            // 下箭头：减少音量10%
             else if (e.code === 'ArrowDown') {
-                const newVolume = Math.max(0, artPlayer.volume - 0.05);
-                artPlayer.volume = newVolume;
-                // 立即更新显示（volumechange 事件也会触发，但这里确保即时反馈）
-                updateVolumeDisplay();
-                console.log('音量:', Math.round(newVolume * 100) + '%');
+                adjustVolume(-VOLUME_STEP);
+                console.log('音量:', Math.round(artPlayer.volume * 100) + '%');
             } 
             // F键：切换全屏
             else if (e.code === 'KeyF') {
                 e.preventDefault();
                 artPlayer.fullscreen = !artPlayer.fullscreen;
+                console.log('F键全屏切换:', artPlayer.fullscreen ? '进入全屏' : '退出全屏');
             } 
             // Enter键（主键盘和数字键盘）：切换全屏
             else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
                 e.preventDefault();
                 artPlayer.fullscreen = !artPlayer.fullscreen;
-                console.log('全屏状态:', artPlayer.fullscreen ? '全屏' : '退出全屏');
+                console.log('Enter键全屏切换:', artPlayer.fullscreen ? '进入全屏' : '退出全屏');
             }
             // Escape键：退出全屏
             else if (e.code === 'Escape' && artPlayer.fullscreen) {
                 e.preventDefault();
                 artPlayer.fullscreen = false;
+                console.log('Escape键退出全屏');
             }
         }, { passive: false });
         
