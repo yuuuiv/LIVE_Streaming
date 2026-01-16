@@ -345,6 +345,71 @@
         #loading-container:-ms-fullscreen {
             z-index: 9997;
         }
+
+        /* --- Volume Slider Styles --- */
+        .art-control-volume-slider {
+            display: flex;
+            align-items: center;
+            width: 120px;
+            height: 100%;
+            margin-left: 10px;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .volume-slider-track {
+            width: 100%;
+            height: 8px;
+            background: #99999980;
+            border-radius: 4px;
+            position: relative;
+            /* overflow: hidden;  Remove overflow hidden so thumb can protrude if needed, though thumb is small enough */
+        }
+
+        .volume-slider-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: #3498db;
+            border-radius: 4px;
+            width: 0%;
+            pointer-events: none;
+        }
+
+        .volume-slider-thumb {
+            width: 16px;
+            height: 16px;
+            background: #3498db;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+
+        /* Transition for non-dragging updates */
+        .art-control-volume-slider:not(.is-dragging) .volume-slider-fill,
+        .art-control-volume-slider:not(.is-dragging) .volume-slider-thumb {
+            transition: width 300ms ease-out, left 300ms ease-out;
+        }
+
+        /* Hover/Active Feedback */
+        .art-control-volume-slider:hover .volume-slider-thumb,
+        .art-control-volume-slider:focus .volume-slider-thumb,
+        .art-control-volume-slider.is-dragging .volume-slider-thumb {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        /* Muted State */
+        .art-control-volume-slider.is-muted {
+            opacity: 0.5;
+            /* cursor: not-allowed;  User requested disabled style, but interaction might still be needed to unmute. Keeping pointer. */
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -375,13 +440,15 @@
     
     <script>
         // 自动检测 API 地址 - 开发环境使用 localhost，生产环境使用生产 API
-        const API_BASE_URL = 'https://api.neofantasy.online';
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const API_BASE_URL = isDevelopment ? 'http://localhost:5000' : 'https://api.neofantasy.online';
         let artPlayer = null;
         let heartbeatTimer = null;
         let sessionId = null;
         let username = null;
         const VOLUME_STEP = 0.1; 
         let volumePercentageControl = null;
+        let volumeSliderUpdate = null;
         
         // 更新控制栏上的音量百分比显示
         function updateVolumeDisplay() {
@@ -399,13 +466,20 @@
             }
         }
 
+        function syncVolumeUI() {
+            if (!artPlayer) return;
+            updateVolumeDisplay();
+            if (typeof volumeSliderUpdate === 'function') {
+                const v = artPlayer.muted ? 0 : artPlayer.volume;
+                volumeSliderUpdate(v);
+            }
+        }
+
         function adjustVolume(delta) {
             if (!artPlayer) return;
-            // 使用 Math.round 确保音量步进对齐到 0.1 的倍数（10% 的倍数）
-            // 公式：Math.round((current + delta) * 10) / 10
             const nextVolume = Math.min(1, Math.max(0, Math.round((artPlayer.volume + delta) * 10) / 10));
             artPlayer.volume = nextVolume;
-            updateVolumeDisplay();
+            syncVolumeUI();
             console.log('音量已调整至:', Math.round(nextVolume * 100) + '%');
         }
         
@@ -559,6 +633,144 @@
                                 }, 50);
                             }
                         }
+                    },
+                    {
+                        position: 'left',
+                        index: 12,
+                        html: `
+                            <div class="art-control-volume-slider" tabindex="0" aria-label="Volume Slider" role="slider" aria-valuemin="0" aria-valuemax="100">
+                                <div class="volume-slider-track">
+                                    <div class="volume-slider-fill"></div>
+                                    <div class="volume-slider-thumb"></div>
+                                </div>
+                            </div>
+                        `,
+                        name: 'volumeSlider',
+                        mounted($control) {
+                            const slider = $control.querySelector('.art-control-volume-slider');
+                            const track = slider.querySelector('.volume-slider-track');
+                            const fill = slider.querySelector('.volume-slider-fill');
+                            const thumb = slider.querySelector('.volume-slider-thumb');
+                            let isDragging = false;
+                            let rafPending = false;
+
+                            function updateSlider(volume) {
+                                const percent = volume * 100;
+                                fill.style.width = `${percent}%`;
+                                thumb.style.left = `${percent}%`;
+                                slider.setAttribute('aria-valuenow', Math.round(percent));
+                                
+                                if (volume === 0 || artPlayer.muted) {
+                                    slider.classList.add('is-muted');
+                                } else {
+                                    slider.classList.remove('is-muted');
+                                }
+                            }
+
+                            volumeSliderUpdate = updateSlider;
+
+                            function getVolumeFromEvent(e) {
+                                const rect = track.getBoundingClientRect();
+                                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                let percent = (clientX - rect.left) / rect.width;
+                                percent = Math.max(0, Math.min(1, percent));
+                                return percent;
+                            }
+
+                            function updateVolumeFromEvent(e) {
+                                const newVolume = getVolumeFromEvent(e);
+                                
+                                updateSlider(newVolume);
+                                
+                                if (!rafPending) {
+                                    rafPending = true;
+                                    requestAnimationFrame(() => {
+                                        if (!artPlayer) {
+                                            rafPending = false;
+                                            return;
+                                        }
+                                        artPlayer.volume = newVolume;
+                                        if (artPlayer.muted && newVolume > 0) artPlayer.muted = false;
+                                        rafPending = false;
+                                    });
+                                }
+                            }
+
+                            setTimeout(() => {
+                                if (!artPlayer) return;
+                                updateSlider(artPlayer.muted ? 0 : artPlayer.volume);
+                            }, 50);
+            
+                            if (artPlayer && typeof artPlayer.on === 'function') {
+                                artPlayer.on('video:volumechange', () => {
+                                    if (!artPlayer) return;
+                                    if (!isDragging) {
+                                        updateSlider(artPlayer.muted ? 0 : artPlayer.volume);
+                                    }
+                                });
+                            }
+
+                            const onMouseDown = (e) => {
+                                isDragging = true;
+                                slider.classList.add('is-dragging');
+                                updateVolumeFromEvent(e);
+                                window.addEventListener('mousemove', onMouseMove);
+                                window.addEventListener('mouseup', onMouseUp);
+                            };
+
+                            const onMouseMove = (e) => {
+                                if (isDragging) {
+                                    e.preventDefault();
+                                    updateVolumeFromEvent(e);
+                                }
+                            };
+
+                            const onMouseUp = () => {
+                                isDragging = false;
+                                slider.classList.remove('is-dragging');
+                                window.removeEventListener('mousemove', onMouseMove);
+                                window.removeEventListener('mouseup', onMouseUp);
+                            };
+
+                            slider.addEventListener('mousedown', onMouseDown);
+
+                            slider.addEventListener('touchstart', (e) => {
+                                isDragging = true;
+                                slider.classList.add('is-dragging');
+                                updateVolumeFromEvent(e);
+                            }, { passive: false });
+
+                            slider.addEventListener('touchmove', (e) => {
+                                if (isDragging) {
+                                    e.preventDefault();
+                                    updateVolumeFromEvent(e);
+                                }
+                            }, { passive: false });
+
+                            slider.addEventListener('touchend', () => {
+                                isDragging = false;
+                                slider.classList.remove('is-dragging');
+                            });
+
+                            slider.addEventListener('keydown', (e) => {
+                                e.stopPropagation();
+                                if (!artPlayer) return;
+                                let currentVolume = artPlayer.volume;
+                                if (artPlayer.muted) currentVolume = 0;
+                                
+                                if (e.key === 'ArrowLeft') {
+                                    e.preventDefault();
+                                    const newVol = Math.max(0, currentVolume - 0.05);
+                                    artPlayer.volume = newVol;
+                                    if (artPlayer.muted && newVol > 0) artPlayer.muted = false;
+                                } else if (e.key === 'ArrowRight') {
+                                    e.preventDefault();
+                                    const newVol = Math.min(1, currentVolume + 0.05);
+                                    artPlayer.volume = newVol;
+                                    if (artPlayer.muted && newVol > 0) artPlayer.muted = false;
+                                }
+                            });
+                        }
                     }
                 ],
                 
@@ -567,6 +779,16 @@
                 lock: true,  // 移动端锁屏功能
             });
 
+            if (!artPlayer || typeof artPlayer.on !== 'function') {
+                console.error('ArtPlayer 初始化失败:', artPlayer);
+                showError(
+                    '播放器初始化失败',
+                    '无法创建播放器实例，请刷新页面后重试',
+                    '⚠️'
+                );
+                return;
+            }
+            
             artPlayer.on('ready', () => {
                 console.log('Player is ready');
                 
@@ -585,17 +807,14 @@
                     }
                 }, 100);
                 
-                // 监听音量变化（包括原生控制栏的操作）
-                // video:volumechange 事件在音量滑块变化、按键调整时触发
                 artPlayer.on('video:volumechange', () => {
                     console.log('音量变化事件触发，当前音量:', Math.round(artPlayer.volume * 100) + '%');
-                    updateVolumeDisplay();
+                    syncVolumeUI();
                 });
                 
-                // 监听静音状态变化
                 artPlayer.on('setMuted', () => {
                     console.log('静音状态变化:', artPlayer.muted ? '已静音' : '已取消静音');
-                    updateVolumeDisplay();
+                    syncVolumeUI();
                 });
                 
                 // 监听全屏变化，确保进度条坐标同步
@@ -799,8 +1018,7 @@
             else if (e.code === 'KeyM') {
                 e.preventDefault();
                 artPlayer.muted = !artPlayer.muted;
-                // 立即更新显示（volumechange 事件也会触发，但这里确保即时反馈）
-                updateVolumeDisplay();
+                syncVolumeUI();
                 console.log('静音状态:', artPlayer.muted ? '已静音' : '已取消静音');
             } 
             // 左箭头：后退5秒
