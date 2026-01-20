@@ -410,6 +410,14 @@
             opacity: 0.5;
             /* cursor: not-allowed;  User requested disabled style, but interaction might still be needed to unmute. Keeping pointer. */
         }
+
+        /* Settings Panel Customization */
+        .art-setting {
+            top: auto !important;
+            bottom: 50px !important;
+            left: auto !important;
+            right: 60px !important;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -563,7 +571,7 @@
                 
                 // 控件设置
                 flip: true,
-                playbackRate: true,
+                playbackRate: false,
                 aspectRatio: true,
                 screenshot: true,
                 setting: true,
@@ -601,9 +609,10 @@
                         html: '播放速度',
                         selector: [
                             { html: '2.0x', value: 2.0 },
+                            { html: '1.75x', value: 1.75 },
                             { html: '1.5x', value: 1.5 },
                             { html: '1.25x', value: 1.25 },
-                            { html: '正常', value: 1.0, default: true },
+                            { html: '1.0x', value: 1.0, default: true },
                             { html: '0.75x', value: 0.75 },
                             { html: '0.5x', value: 0.5 },
                         ],
@@ -660,10 +669,19 @@
                                 thumb.style.left = `${percent}%`;
                                 slider.setAttribute('aria-valuenow', Math.round(percent));
                                 
-                                if (volume === 0 || artPlayer.muted) {
+                                const isMuted = volume === 0 || (artPlayer && artPlayer.muted);
+                                if (isMuted) {
                                     slider.classList.add('is-muted');
                                 } else {
                                     slider.classList.remove('is-muted');
+                                }
+                                
+                                // 实时更新音量百分比显示
+                                if (volumePercentageControl) {
+                                    // 拖动时优先显示当前值（视为即将解除静音），非拖动时遵循 artPlayer 静音状态
+                                    // 只有在非拖动状态下，才显示"静音"文字；拖动时显示数值以便用户知道调到了多少
+                                    const showMutedText = !isDragging && isMuted;
+                                    volumePercentageControl.textContent = showMutedText ? '静音' : Math.round(percent) + '%';
                                 }
                             }
 
@@ -844,6 +862,47 @@
                         artPlayer.resize();
                     }, 150);
                 });
+
+                // --- 修复设置浮框定位 ---
+                const adjustSettingPosition = () => {
+                    const settingBtn = artPlayer.template.$controls.querySelector('.art-control-setting');
+                    const settingPanel = artPlayer.template.$setting;
+                    const controls = artPlayer.template.$controls;
+                    
+                    if (settingBtn && settingPanel && controls) {
+                        const playerRect = artPlayer.template.$player.getBoundingClientRect();
+                        const btnRect = settingBtn.getBoundingClientRect();
+                        const controlsRect = controls.getBoundingClientRect();
+                        
+                        // 计算右边距：播放器右边 - 齿轮按钮右边
+                        const rightDist = playerRect.right - btnRect.right;
+                        
+                        // 计算底部边距：(播放器底部 - 控制栏顶部) + 5px
+                        // 这样浮框底部就会比控制栏顶部高 5px
+                        const bottomDist = (playerRect.bottom - controlsRect.top) + 5;
+                        
+                        settingPanel.style.right = `${rightDist}px`;
+                        settingPanel.style.bottom = `${bottomDist}px`;
+                        settingPanel.style.left = 'auto';
+                        settingPanel.style.top = 'auto';
+                    }
+                };
+
+                // 在调整大小时更新位置
+                artPlayer.on('resize', adjustSettingPosition);
+                
+                // 监听设置按钮点击
+                const settingBtn = artPlayer.template.$controls.querySelector('.art-control-setting');
+                if (settingBtn) {
+                    settingBtn.addEventListener('click', () => {
+                        requestAnimationFrame(adjustSettingPosition);
+                        // 再次尝试，以防动画延迟
+                        setTimeout(adjustSettingPosition, 50);
+                    });
+                }
+                
+                // 初始调用
+                setTimeout(adjustSettingPosition, 100);
             });
             
             artPlayer.on('error', (err) => {
