@@ -185,7 +185,60 @@
             background: #dc2626 !important;
         }
 
-        /* 被踢下线遮罩样式已移除 */
+        /* 被踢下线遮罩 */
+        #kick-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.85);
+            color: #f87171;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem;
+            pointer-events: none;
+        }
+        
+        /* 全屏下的被踢下线遮罩 - 沉浸式背景 */
+        #player-container:fullscreen #kick-overlay,
+        #player-container:-webkit-full-screen #kick-overlay,
+        #player-container:-moz-full-screen #kick-overlay,
+        #player-container:-ms-fullscreen #kick-overlay {
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100000;
+        }
+        
+        #kick-overlay.active {
+            pointer-events: auto;
+        }
+        
+        #kick-overlay h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        /* 全屏下的被踢下线提示文字放大 */
+        #player-container:fullscreen #kick-overlay h2,
+        #player-container:-webkit-full-screen #kick-overlay h2,
+        #player-container:-moz-full-screen #kick-overlay h2,
+        #player-container:-ms-fullscreen #kick-overlay h2 {
+            font-size: 2.5rem;
+        }
+        
+        #kick-overlay p {
+            color: #fecaca;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* 全屏下的被踢下线内容放大 */
+        #player-container:fullscreen #kick-overlay p,
+        #player-container:-webkit-full-screen #kick-overlay p,
+        #player-container:-moz-full-screen #kick-overlay p,
+        #player-container:-ms-fullscreen #kick-overlay p {
+            font-size: 1.5rem;
+        }
 
         /* ArtPlayer 进度条修复，防止被截断 */
         .art-video-player {
@@ -386,14 +439,21 @@
     <!-- Player Container -->
     <div id="player-container"></div>
 
-    <!-- Kick Overlay 已移除 -->
+    <!-- Kick Overlay -->
+    <div id="kick-overlay">
+        <h2>⚠ 您的账号已在其他设备登录</h2>
+        <p>当前播放已停止，请重新登录后继续观看。</p>
+        <button class="back-button back-button-red" type="button" onclick="goBack()">返回首页</button>
+    </div>
     
     <script>
         // 自动检测 API 地址 - 开发环境使用 localhost，生产环境使用生产 API
         const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const API_BASE_URL = isDevelopment ? 'http://localhost:5000' : 'https://api.neofantasy.online';
         let artPlayer = null;
-        // 心跳/异地登录检测相关变量已移除
+        let heartbeatTimer = null;
+        let sessionId = null;
+        let username = null;
         const VOLUME_STEP = 0.1; 
         let volumePercentageControl = null;
         let volumeSliderUpdate = null;
@@ -855,37 +915,92 @@
             });
         }
 
-        // function handleKicked 已移除
+        function handleKicked(message = '您的账号已在其他设备登录，当前播放已停止。') {
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+            }
+            if (artPlayer) {
+                artPlayer.destroy();
+                artPlayer = null;
+            }
+            const overlay = document.getElementById('kick-overlay');
+            overlay.style.display = 'flex';
+            overlay.classList.add('active');
+            document.querySelector('#kick-overlay p').textContent = message;
+        }
 
-        // function startHeartbeat 已移除
+        async function startHeartbeat() {
+            if (!username || !sessionId) return;
+            heartbeatTimer = setInterval(async () => {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/heartbeat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, session_id: sessionId })
+                    });
+
+                    if (resp.status === 403) {
+                        handleKicked('您的账号已在其他设备登录，当前播放已停止。');
+                        return;
+                    }
+
+                    if (!resp.ok) {
+                        handleKicked('校验失败，当前播放已停止。');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('heartbeat error:', err);
+                    handleKicked('鉴权异常，当前播放已停止。');
+                }
+            }, 25000); // 25s
+        }
         
         // 获取视频流并鉴权
         async function loadStream() {
             const { show_id, user_token } = getUrlParams();
-            // username = user_token; // 已移除心跳/异地登录检测
+            username = user_token;
+            
             // 参数校验 - 只检查 show_id，免费节目允许无 user_token
             if (!show_id) {
-                showError('参数错误', '缺少节目 ID，请从首页重新进入', '⚠️');
+                showError(
+                    '参数错误',
+                    '缺少节目 ID，请从首页重新进入',
+                    '⚠️'
+                );
                 return;
             }
+            
             try {
                 console.log('Requesting stream for show:', show_id);
                 // 构造请求 URL - 如果没有 user_token 就不传
                 const url = user_token 
                     ? `${API_BASE_URL}/get-stream?show_id=${show_id}&user_token=${user_token}`
                     : `${API_BASE_URL}/get-stream?show_id=${show_id}`;
+                
                 const response = await fetch(url);
                 console.log('Response status:', response.status);
+                
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Stream URL received:', data.url);
-                    // 直接初始化播放器，无需心跳/sessionId
+                    sessionId = data.session_id;
+                    
+                    // 初始化播放器
                     initPlayer(data.url, show_id);
+                    
+                    // 只有当有 user_token 和 session_id 时才启动心跳检测
+                    if (username && sessionId) {
+                        startHeartbeat();
+                    } else {
+                        console.log('免费节目，跳过心跳检测');
+                    }
                 } else {
                     // 根据不同的错误码显示不同的错误信息
                     let errorTitle = '加载失败';
                     let errorMessage = '未知错误';
                     let errorIcon = '❌';
+                    
                     switch (response.status) {
                         case 403:
                             errorTitle = '权限不足';
@@ -914,11 +1029,16 @@
                             errorMessage = `请求失败，错误码: ${response.status}`;
                             errorIcon = '❌';
                     }
+                    
                     showError(errorTitle, errorMessage, errorIcon);
                 }
             } catch (error) {
                 console.error('Network error:', error);
-                showError('网络错误', '无法连接到服务器，请检查您的网络连接', '🌐');
+                showError(
+                    '网络错误',
+                    '无法连接到服务器，请检查您的网络连接',
+                    '🌐'
+                );
             }
         }
         
@@ -1006,6 +1126,10 @@
         
         // 页面关闭前清理
         window.addEventListener('beforeunload', () => {
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+                heartbeatTimer = null;
+            }
             if (artPlayer) {
                 artPlayer.destroy();
             }
