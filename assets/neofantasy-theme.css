@@ -91,6 +91,13 @@ body.nf-site {
 
 .nf-theme-toggle:hover { border-color: rgba(157, 173, 111, .62); transform: translateY(-1px); }
 .nf-theme-toggle:focus-visible { outline: 3px solid var(--nf-olive); outline-offset: 3px; }
+.nf-theme-toggle [data-theme-icon] {
+    display: inline-grid;
+    width: 1.125rem;
+    height: 1.125rem;
+    place-items: center;
+}
+.nf-theme-toggle [data-theme-icon] svg { display: block; width: 100%; height: 100%; }
 
 .brand-lockup {
     display: inline-flex;
