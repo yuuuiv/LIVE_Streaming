@@ -5,8 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeoFantasy Live · 管理控制台</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            nf: {
+              blue:  '#c3dfe0', // Light Blue
+              green: '#bcd979', // Willow Green
+              olive: '#9dad6f', // Muted Olive
+              grey:  '#7d6d61', // Dim Grey
+              brown: '#5e574d', // Stone Brown
+              mist:  '#eef5f5', // 浅色页面背景（Light Blue 衍生）
+              frost: '#ddecec', // 浅色次级表面
+              leaf:  '#a9c961', // Willow Green 加深（hover）
+              coal:  '#38342e', // 主文本
+            }
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-900">
+<body class="min-h-screen bg-nf-mist text-nf-coal">
   <main class="mx-auto max-w-6xl p-4 sm:p-8">
     <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
       <div>

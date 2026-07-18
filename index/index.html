@@ -11,14 +11,34 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon/favicon-96x96.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/favicon/site.webmanifest">
-    <meta name="theme-color" content="#fff3d6">
-    <meta name="msapplication-TileColor" content="#fff3d6">
+    <meta name="theme-color" content="#c3dfe0">
+    <meta name="msapplication-TileColor" content="#c3dfe0">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
         darkMode: 'class', // 允许通过给 <html> 标签添加 'dark' 类来切换模式
+        theme: {
+            extend: {
+                colors: {
+                    nf: {
+                        blue:  '#c3dfe0', // Light Blue
+                        green: '#bcd979', // Willow Green
+                        olive: '#9dad6f', // Muted Olive
+                        grey:  '#7d6d61', // Dim Grey
+                        brown: '#5e574d', // Stone Brown
+                        mist:  '#eef5f5', // 浅色页面背景（Light Blue 衍生）
+                        frost: '#ddecec', // 浅色次级表面
+                        leaf:  '#a9c961', // Willow Green 加深（hover）
+                        sand:  '#b5aa9e', // Dim Grey 提亮（暗色弱文本）
+                        bark:  '#4c463f', // 暗色卡片表面（Stone Brown 衍生）
+                        coal:  '#38342e', // 暗色页面背景 / 浅色主文本
+                        cream: '#f2efe8', // 暗色模式主文本
+                    }
+                }
+            }
+        }
     }
     </script>
     
