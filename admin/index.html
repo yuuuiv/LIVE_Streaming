@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeoFantasy Live · 管理控制台</title>
+  <meta name="theme-color" content="#c3dfe0">
+  <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/assets/neofantasy-theme.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -26,25 +33,41 @@
       }
     }
   </script>
+  <link rel="stylesheet" href="/assets/neofantasy-theme.css">
 </head>
-<body class="min-h-screen bg-nf-mist text-nf-coal">
-  <main class="mx-auto max-w-6xl p-4 sm:p-8">
-    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+<body class="admin-page">
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <main id="main-content" class="admin-shell">
+    <div class="admin-topbar">
+      <a href="/index/" class="brand-lockup" aria-label="NeoFantasy Live 首页">
+        <img src="/favicon/favicon.svg" alt="" class="brand-logo" width="42" height="42">
+        <span class="brand-copy"><strong>NeoFantasy</strong><small>CONTROL ROOM</small></span>
+      </a>
+      <button type="button" class="nf-theme-toggle" data-theme-toggle aria-label="切换主题">
+        <span data-theme-icon aria-hidden="true">☾</span>
+      </button>
+    </div>
+
+    <div class="admin-header">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">NeoFantasy Live</p>
-        <h1 class="mt-1 text-3xl font-bold">权限申请控制台</h1>
-        <p id="identity" class="mt-2 text-sm text-slate-500">正在验证管理员身份…</p>
+        <p class="admin-kicker">Access operations</p>
+        <h1 class="admin-title">权限申请控制台</h1>
+        <p id="identity" class="admin-subtitle">正在验证管理员身份…</p>
       </div>
       <div class="flex gap-2">
-        <button id="refresh" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">刷新</button>
-        <a href="/index/" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">返回站点</a>
+        <button id="refresh" type="button" class="nf-button nf-button-primary px-4 py-2 text-sm">刷新数据</button>
+        <a href="/index/" class="nf-button nf-button-secondary px-4 py-2 text-sm">返回站点</a>
       </div>
     </div>
 
-    <section id="notice" class="mb-4 hidden rounded-lg border p-4 text-sm"></section>
-    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
-        <h2 class="font-semibold">权限申请</h2>
+    <section id="notice" class="admin-notice mb-4 hidden border p-4 text-sm"></section>
+    <section class="admin-card">
+      <div class="admin-toolbar">
+        <div>
+          <h2 class="font-bold text-nf-brown">观看权限申请</h2>
+          <p class="mt-1 text-xs text-nf-grey">审核用户提交的节目访问请求</p>
+        </div>
+        <label for="status-filter" class="sr-only">申请状态</label>
         <select id="status-filter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
           <option value="pending">待审核</option>
           <option value="approved">已通过</option>
@@ -54,13 +77,14 @@
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-left text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+          <caption class="sr-only">节目观看权限申请列表</caption>
+          <thead class="text-xs uppercase">
             <tr><th class="px-4 py-3">用户</th><th class="px-4 py-3">节目</th><th class="px-4 py-3">理由</th><th class="px-4 py-3">状态</th><th class="px-4 py-3">时间</th><th class="px-4 py-3">操作</th></tr>
           </thead>
-          <tbody id="requests" class="divide-y divide-slate-100"></tbody>
+          <tbody id="requests" class="divide-y"></tbody>
         </table>
       </div>
-      <div id="empty" class="hidden p-10 text-center text-sm text-slate-500">暂无申请</div>
+      <div id="empty" class="hidden p-10 text-center text-sm text-nf-grey">当前筛选条件下暂无申请</div>
     </section>
   </main>
 <script>
@@ -77,11 +101,12 @@
   const notice = (message, error = false) => {
     const el = document.getElementById('notice');
     el.textContent = message;
-    el.className = `mb-4 rounded-lg border p-4 text-sm ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
+    el.className = `admin-notice mb-4 border p-4 text-sm ${error ? 'border-nf-grey bg-nf-brown/10 text-nf-brown' : 'border-nf-olive bg-nf-green/20 text-nf-brown'}`;
     el.classList.remove('hidden');
   };
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
   const statusText = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
+  const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' });
 
   async function verifyAdmin() {
     const response = await fetch(`${AUTH}/api/session/me`, { headers: headers(), credentials: 'include' });
@@ -103,10 +128,10 @@
       <tr>
         <td class="px-4 py-4 font-medium">${escapeHtml(item.user_email)}</td>
         <td class="px-4 py-4">${escapeHtml(item.show_id)}</td>
-        <td class="max-w-xs px-4 py-4 text-slate-600">${escapeHtml(item.reason || '—')}</td>
-        <td class="px-4 py-4"><span class="rounded-full bg-slate-100 px-2 py-1 text-xs">${statusText[item.status] || escapeHtml(item.status)}</span></td>
-        <td class="whitespace-nowrap px-4 py-4 text-slate-500">${escapeHtml(new Date(item.created_at).toLocaleString('zh-CN'))}</td>
-        <td class="whitespace-nowrap px-4 py-4">${item.status === 'pending' ? `<button class="mr-2 rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700" onclick="review('${item.id}','approved')">通过</button><button class="rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700" onclick="review('${item.id}','rejected')">拒绝</button>` : '—'}</td>
+        <td class="max-w-xs px-4 py-4 text-nf-grey">${escapeHtml(item.reason || '—')}</td>
+        <td class="px-4 py-4"><span class="status-pill">${statusText[item.status] || escapeHtml(item.status)}</span></td>
+        <td class="whitespace-nowrap px-4 py-4 text-nf-grey">${escapeHtml(dateTimeFormatter.format(new Date(item.created_at)))}</td>
+        <td class="whitespace-nowrap px-4 py-4">${item.status === 'pending' ? `<button type="button" class="nf-button nf-button-accent mr-2 px-3 py-1.5 text-xs" onclick="review('${item.id}','approved')">通过</button><button type="button" class="nf-button nf-button-danger px-3 py-1.5 text-xs" onclick="review('${item.id}','rejected')">拒绝</button>` : '—'}</td>
       </tr>`).join('');
   }
 

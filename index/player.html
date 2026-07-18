@@ -12,9 +12,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/favicon/site.webmanifest">
     
-    <!-- Theme Color - for browsers that support it -->
-    <meta name="theme-color" content="#c3dfe0" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)">
+    <!-- Theme Color - synchronized with the selected site theme -->
+    <meta name="theme-color" content="#c3dfe0">
     
     <!-- Apple Mobile Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +21,10 @@
     
     <!-- Windows Tiles -->
     <meta name="msapplication-TileColor" content="#c3dfe0">
+    <script src="/assets/neofantasy-theme.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -150,8 +153,8 @@
         }
         
         .spinner {
-            border: 4px solid rgba(139, 92, 246, 0.2);
-            border-top-color: rgb(139, 92, 246);
+            border: 4px solid rgba(188, 217, 121, 0.2);
+            border-top-color: #bcd979;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -181,7 +184,7 @@
         
         .back-button {
             padding: 0.75rem 2rem;
-            background: rgb(139, 92, 246);
+            background: #bcd979;
             color: white;
             border: none;
             border-radius: 0.5rem;
@@ -191,11 +194,11 @@
         }
         
         .back-button:hover {
-            background: rgb(124, 58, 237);
+            background: #9dad6f;
         }
 
         .back-button-red {
-            background: #ef4444 !important;
+            background: #7d6d61 !important;
         }
         .back-button-red:hover {
             background: #dc2626 !important;
@@ -309,7 +312,7 @@
         
         /* 当前进度条 */
         .art-control-progress .art-control-progress-current {
-            background-color: #8b5cf6 !important;
+            background-color: #bcd979 !important;
         }
         
         /* 确保音量控件显示 */
@@ -389,7 +392,7 @@
             top: 0;
             left: 0;
             height: 100%;
-            background: #3498db;
+            background: #bcd979;
             border-radius: 4px;
             width: 0%;
             pointer-events: none;
@@ -398,7 +401,7 @@
         .volume-slider-thumb {
             width: 16px;
             height: 16px;
-            background: #3498db;
+            background: #c3dfe0;
             border-radius: 50%;
             position: absolute;
             top: 50%;
@@ -435,21 +438,30 @@
             right: 60px !important;
         }
     </style>
+    <link rel="stylesheet" href="/assets/neofantasy-theme.css">
 </head>
-<body class="bg-gray-900 text-white">
+<body class="player-page">
+    <a class="player-brand" href="/index/" aria-label="返回 NeoFantasy Live 首页">
+        <img src="/favicon/favicon.svg" alt="" width="32" height="32">
+        <span>NEOFANTASY LIVE</span>
+    </a>
+    <button type="button" class="nf-theme-toggle player-theme-toggle" data-theme-toggle aria-label="切换主题">
+        <span data-theme-icon aria-hidden="true">☾</span>
+    </button>
     
     <!-- Loading Container -->
     <div id="loading-container">
+        <img class="loading-logo" src="/favicon/favicon.svg" alt="NeoFantasy 兔子标志" width="67" height="67">
         <div class="spinner"></div>
-        <p class="mt-4 text-lg">正在加载视频...</p>
+        <p class="mt-4 text-lg">正在加载视频…</p>
     </div>
     
     <!-- Error Container -->
     <div id="error-container">
-        <div class="error-icon">❌</div>
+        <div class="error-icon">◇</div>
         <div class="error-title" id="error-title">加载失败</div>
         <div class="error-message" id="error-message">未知错误</div>
-        <button class="back-button" onclick="goBack()">返回首页</button>
+        <button class="back-button" type="button" onclick="goBack()">返回首页</button>
     </div>
     
     <!-- Player Container -->
@@ -457,7 +469,7 @@
 
     <!-- Kick Overlay -->
     <div id="kick-overlay">
-        <h2>⚠ 您的账号已在其他设备登录</h2>
+        <h2>账号已在其他设备登录</h2>
         <p>当前播放已停止，请重新登录后继续观看。</p>
         <button class="back-button back-button-red" type="button" onclick="goBack()">返回首页</button>
     </div>
@@ -508,17 +520,6 @@
             console.log('音量已调整至:', Math.round(nextVolume * 100) + '%');
         }
         
-        // 初始化主题 - 从 localStorage 读取
-        function initTheme() {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.body.classList.remove('bg-gray-900');
-                document.body.classList.add('bg-gray-50', 'text-gray-900');
-            }
-        }
-        
         // 从 URL 获取参数
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -567,6 +568,7 @@
             artPlayer = new Artplayer({
                 container: '#player-container',
                 url: streamUrl,
+                theme: '#bcd979',
                 type: 'm3u8',
                 customType: {
                     m3u8: function(video, url) {
@@ -1064,7 +1066,6 @@
         
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', () => {
-            initTheme();
             loadStream();
         });
         
