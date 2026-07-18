@@ -16,7 +16,8 @@
     <script src="/assets/neofantasy-theme.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -274,99 +275,98 @@
 
     <!-- Login Modal -->
     <div id="login-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="login-title">
-        <div class="nf-dialog p-6 md:p-8 max-w-md w-full mx-4">
-            <h3 id="login-title" class="text-xl md:text-2xl font-bold mb-2 text-center">登录</h3>
-            <p class="mb-5 text-center text-sm text-nf-grey">使用 NeoFantasy 账号登录</p>
-            
-            <form id="login-form" onsubmit="event.preventDefault(); login();">
-                <div class="space-y-4">
-                    <div>
-                        <label for="login-email" class="block text-sm font-medium mb-1">邮箱</label>
-                        <input type="email" id="login-email" name="email" required autocomplete="email" spellcheck="false"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
-                    </div>
-                    
-                    <div>
-                        <label for="login-password" class="block text-sm font-medium mb-1">密码</label>
-                        <input type="password" id="login-password" name="password" required autocomplete="current-password"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
-                    </div>
-                    
-                    <div id="login-error" class="text-red-500 text-sm hidden" aria-live="polite"></div>
-                    
-                    <div class="space-y-3">
-                        <button type="submit" 
-                                class="nf-button nf-button-primary w-full px-6 py-3">
-                            登录
-                        </button>
-                        <button type="button" onclick="hideLoginModal()"
-                                class="nf-button nf-button-ghost w-full px-6 py-3">
-                            取消
-                        </button>
-                        <div class="text-center text-sm text-gray-500">
-                            还没有账号？ <button type="button" onclick="switchToRegister()" class="nf-text-button">注册</button>
-                        </div>
-                    </div>
+        <div class="nf-dialog nf-auth-dialog w-full mx-4" tabindex="-1">
+            <button type="button" class="nf-auth-close" onclick="hideLoginModal()" aria-label="关闭登录窗口">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <div class="nf-auth-header">
+                <div class="nf-auth-mark" aria-hidden="true">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 7.3-7.3M18 5l2 2M15 8l2 2"/></svg>
                 </div>
+                <h3 id="login-title">用户登录</h3>
+                <p>使用统一账户服务管理您的直播权限</p>
+            </div>
+
+            <div class="nf-oauth-grid" aria-label="第三方登录">
+                <button type="button" id="github-login-button" class="nf-oauth-button" onclick="startOAuthLogin('github')">
+                    <span class="nf-oauth-icon nf-github-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.11.79-.25.79-.56v-2.22c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.93 10.93 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></span>
+                    <span>GitHub 登录</span>
+                </button>
+                <button type="button" id="google-login-button" class="nf-oauth-button" onclick="startOAuthLogin('google')">
+                    <span class="nf-oauth-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.09-1.92 3.27-4.76 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.99 0 5.49-.99 7.32-2.68l-3.57-2.77c-.99.66-2.25 1.05-3.75 1.05-2.88 0-5.32-1.95-6.2-4.57H2.11v2.85A11.05 11.05 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.8 14.03A6.64 6.64 0 0 1 5.45 12c0-.71.12-1.4.35-2.03V7.12H2.11A11 11 0 0 0 1 12c0 1.77.42 3.44 1.11 4.88l3.69-2.85Z"/><path fill="#EA4335" d="M12 5.4c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.55 10.55 0 0 0 12 1 11.05 11.05 0 0 0 2.11 7.12L5.8 9.97C6.68 7.35 9.12 5.4 12 5.4Z"/></svg></span>
+                    <span>Google 登录</span>
+                </button>
+            </div>
+
+            <div class="nf-auth-divider"><span>或使用邮箱</span></div>
+            <div class="nf-auth-tabs" role="tablist" aria-label="账户操作">
+                <button type="button" class="active" role="tab" aria-selected="true">登录</button>
+                <button type="button" role="tab" aria-selected="false" onclick="switchToRegister()">注册</button>
+            </div>
+
+            <form id="login-form" class="nf-auth-form" onsubmit="event.preventDefault(); login();">
+                <label class="nf-auth-field" for="login-email">
+                    <span class="sr-only">用户邮箱</span>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                    <input type="email" id="login-email" name="email" required autocomplete="email" spellcheck="false" placeholder="用户邮箱">
+                </label>
+                <label class="nf-auth-field" for="login-password">
+                    <span class="sr-only">密码</span>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 7.3-7.3M18 5l2 2M15 8l2 2"/></svg>
+                    <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="密码">
+                </label>
+                <div id="login-error" class="nf-auth-message error hidden" aria-live="polite"></div>
+                <button type="submit" id="email-login-button" class="nf-button nf-button-primary nf-auth-submit">登录账户</button>
             </form>
         </div>
     </div>
 
     <!-- Register Modal -->
     <div id="register-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="register-title">
-        <div class="nf-dialog p-6 md:p-8 max-w-md w-full mx-4">
-            <h3 id="register-title" class="text-xl md:text-2xl font-bold mb-2 text-center">注册</h3>
-            <p class="mb-5 text-center text-sm text-nf-grey">使用邮箱验证码创建账号</p>
-            
-            <form id="register-form" onsubmit="event.preventDefault(); register();">
-                <div class="space-y-4">
-                    <div>
-                        <label for="register-email" class="block text-sm font-medium mb-1">邮箱</label>
-                        <input type="email" id="register-email" name="email" required autocomplete="email" spellcheck="false"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
-                    </div>
-                    
-                    <div>
-                        <label for="register-password" class="block text-sm font-medium mb-1">密码</label>
-                        <input type="password" id="register-password" name="new-password" required autocomplete="new-password"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
-                    </div>
-                    
-                    <div>
-                        <label for="register-confirm-password" class="block text-sm font-medium mb-1">确认密码</label>
-                        <input type="password" id="register-confirm-password" name="confirm-password" required autocomplete="new-password"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
-                    </div>
-
-                    <div>
-                        <label for="register-code" class="block text-sm font-medium mb-1">邮箱验证码</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="register-code" name="verification-code" inputmode="numeric" maxlength="6" required autocomplete="one-time-code" spellcheck="false"
-                                   class="min-w-0 flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
-                            <button type="button" id="send-register-code" onclick="sendRegisterCode()"
-                                    class="nf-button nf-button-secondary shrink-0 px-3 py-2">
-                                发送验证码
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="register-error" class="text-red-500 text-sm hidden" aria-live="polite"></div>
-                    <div id="register-success" class="text-green-500 text-sm hidden" aria-live="polite"></div>
-                    
-                    <div class="space-y-3">
-                        <button type="submit" 
-                                class="nf-button nf-button-accent w-full px-6 py-3">
-                            注册
-                        </button>
-                        <button type="button" onclick="hideRegisterModal()"
-                                class="nf-button nf-button-ghost w-full px-6 py-3">
-                            取消
-                        </button>
-                        <div class="text-center text-sm text-gray-500">
-                            已有账号？ <button type="button" onclick="switchToLogin()" class="nf-text-button">登录</button>
-                        </div>
-                    </div>
+        <div class="nf-dialog nf-auth-dialog w-full mx-4" tabindex="-1">
+            <button type="button" class="nf-auth-close" onclick="hideRegisterModal()" aria-label="关闭注册窗口">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <div class="nf-auth-header">
+                <div class="nf-auth-mark" aria-hidden="true">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 7.3-7.3M18 5l2 2M15 8l2 2"/></svg>
                 </div>
+                <h3 id="register-title">创建账户</h3>
+                <p>验证邮箱后即可使用直播订阅服务</p>
+            </div>
+            <div class="nf-auth-tabs" role="tablist" aria-label="账户操作">
+                <button type="button" role="tab" aria-selected="false" onclick="switchToLogin()">登录</button>
+                <button type="button" class="active" role="tab" aria-selected="true">注册</button>
+            </div>
+
+            <form id="register-form" class="nf-auth-form" onsubmit="event.preventDefault(); register();">
+                <label class="nf-auth-field" for="register-email">
+                    <span class="sr-only">用户邮箱</span>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                    <input type="email" id="register-email" name="email" required autocomplete="email" spellcheck="false" placeholder="用户邮箱">
+                </label>
+                <label class="nf-auth-field" for="register-password">
+                    <span class="sr-only">设置密码</span>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 7.3-7.3M18 5l2 2M15 8l2 2"/></svg>
+                    <input type="password" id="register-password" name="new-password" required autocomplete="new-password" minlength="8" placeholder="设置密码（至少 8 位）">
+                </label>
+                <label class="nf-auth-field" for="register-confirm-password">
+                    <span class="sr-only">确认密码</span>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                    <input type="password" id="register-confirm-password" name="confirm-password" required autocomplete="new-password" minlength="8" placeholder="确认密码">
+                </label>
+                <div id="register-turnstile" class="nf-turnstile hidden" aria-label="Cloudflare 人机验证"></div>
+                <div class="nf-auth-code-row">
+                    <label class="nf-auth-field" for="register-code">
+                        <span class="sr-only">邮箱验证码</span>
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 7.3-7.3M18 5l2 2M15 8l2 2"/></svg>
+                        <input type="text" id="register-code" name="verification-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required autocomplete="one-time-code" spellcheck="false" placeholder="验证码">
+                    </label>
+                    <button type="button" id="send-register-code" onclick="sendRegisterCode()" class="nf-button nf-button-secondary">发送验证码</button>
+                </div>
+                <div id="register-error" class="nf-auth-message error hidden" aria-live="polite"></div>
+                <div id="register-success" class="nf-auth-message success hidden" aria-live="polite"></div>
+                <button type="submit" class="nf-button nf-button-accent nf-auth-submit">创建账户</button>
             </form>
         </div>
     </div>
@@ -378,6 +378,9 @@
         const TOKEN_KEY = 'nf_access_token';
         const USER_KEY = 'nf_user';
         const PURCHASED_SHOWS_KEY = 'purchased_shows';
+        const OAUTH_PROVIDER_KEY = 'nf_oauth_provider';
+        const OAUTH_REDIRECT_KEY = 'nf_oauth_redirect';
+        const OAUTH_STATE_KEY = 'nf_oauth_state';
         const SHOW_COUNT_FORMATTER = new Intl.NumberFormat('zh-CN');
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
         const formatDescription = (value) => escapeHtml(String(value ?? '').replace(/([。！？!?]|\.(?=\s|$))\s*/g, '$1\n').trim());
@@ -388,6 +391,10 @@
         let purchasedShows = [];
         let modalReturnFocus = null;
         let currentUser = null;
+        let authSettings = {};
+        let turnstileWidgetId = null;
+        let turnstileToken = '';
+        let registerCodeTimer = null;
         
         // shows data - 将从 API 动态加载
         let Shows = [];
@@ -400,6 +407,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            await loadAuthSettings();
+            await handleOAuthCallback();
             await restoreSession();
             updateAuthUI(); // 初始化认证状态显示
             loadShows(); // 动态加载节目列表
@@ -437,6 +446,136 @@
                 headers,
                 credentials: 'include',
             });
+        }
+
+        async function loadAuthSettings() {
+            try {
+                const response = await fetch(`${AUTH_BASE_URL}/api/settings`, {
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' },
+                });
+                if (!response.ok) throw new Error('认证设置加载失败');
+                authSettings = await response.json();
+            } catch (error) {
+                console.warn('Auth settings unavailable:', error);
+                authSettings = {};
+            }
+
+            const providers = ['github', 'google'];
+            providers.forEach((provider) => {
+                const button = document.getElementById(`${provider}-login-button`);
+                if (!button) return;
+                const configured = authSettings[`enabled_${provider}`] !== false;
+                button.disabled = !configured;
+                button.title = configured ? `使用 ${provider === 'github' ? 'GitHub' : 'Google'} 登录` : `${provider === 'github' ? 'GitHub' : 'Google'} OAuth 尚未配置`;
+            });
+        }
+
+        function liveReturnUrl() {
+            return `${window.location.origin}${window.location.pathname}`;
+        }
+
+        function oauthCallbackUrl(provider) {
+            return `${AUTH_BASE_URL}/callback/${provider}`;
+        }
+
+        function clearOAuthQuery() {
+            const url = new URL(window.location.href);
+            ['code', 'state', 'scope', 'authuser', 'prompt', 'error', 'error_description'].forEach((key) => url.searchParams.delete(key));
+            window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+        }
+
+        function clearOAuthSession() {
+            sessionStorage.removeItem(OAUTH_PROVIDER_KEY);
+            sessionStorage.removeItem(OAUTH_REDIRECT_KEY);
+            sessionStorage.removeItem(OAUTH_STATE_KEY);
+        }
+
+        async function startOAuthLogin(provider) {
+            const button = document.getElementById(`${provider}-login-button`);
+            const errorElement = document.getElementById('login-error');
+            errorElement.classList.add('hidden');
+
+            if (authSettings[`enabled_${provider}`] === false) {
+                errorElement.textContent = `${provider === 'github' ? 'GitHub' : 'Google'} 登录尚未在认证服务中配置`;
+                errorElement.classList.remove('hidden');
+                return;
+            }
+
+            if (button) {
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+            }
+
+            const redirectUrl = oauthCallbackUrl(provider);
+            const returnTo = liveReturnUrl();
+            try {
+                sessionStorage.setItem(OAUTH_PROVIDER_KEY, provider);
+                sessionStorage.setItem(OAUTH_REDIRECT_KEY, redirectUrl);
+                sessionStorage.removeItem(OAUTH_STATE_KEY);
+                const loginUrl = new URL('/api/login/redirect', AUTH_BASE_URL);
+                loginUrl.search = new URLSearchParams({
+                    login_type: provider,
+                    redirect_url: redirectUrl,
+                    return_to: returnTo,
+                }).toString();
+                window.location.assign(loginUrl.toString());
+            } catch (error) {
+                errorElement.textContent = error.message || '第三方登录连接失败';
+                errorElement.classList.remove('hidden');
+                if (button) {
+                    button.disabled = false;
+                    button.removeAttribute('aria-busy');
+                }
+            }
+        }
+
+        async function handleOAuthCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code') || '';
+            const state = params.get('state') || '';
+            const providerError = params.get('error_description') || params.get('error') || '';
+            if (!code && !providerError) return;
+
+            const provider = sessionStorage.getItem(OAUTH_PROVIDER_KEY) || '';
+            const redirectUrl = sessionStorage.getItem(OAUTH_REDIRECT_KEY) || oauthCallbackUrl(provider);
+            const expectedState = sessionStorage.getItem(OAUTH_STATE_KEY) || '';
+            let message = '';
+
+            try {
+                if (providerError) throw new Error(providerError);
+                if (!provider || !['github', 'google'].includes(provider)) throw new Error('登录会话已过期，请重新选择登录方式');
+                if (expectedState && (!state || state !== expectedState)) throw new Error('登录状态校验失败，请重新发起登录');
+
+                const response = await authFetch('/api/session/oauth-callback', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        login_type: provider,
+                        code,
+                        state,
+                        redirect_url: redirectUrl,
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || data.error || '第三方账号兑换失败');
+                if (!data.access_token || !data.user) throw new Error('认证服务返回的会话信息不完整');
+
+                localStorage.setItem(TOKEN_KEY, data.access_token);
+                currentUser = data.user;
+                localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+            } catch (error) {
+                message = error.message || '第三方登录失败';
+            } finally {
+                clearOAuthSession();
+                clearOAuthQuery();
+            }
+
+            if (message) {
+                showLoginModal();
+                const errorElement = document.getElementById('login-error');
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
         }
 
         async function apiFetch(path, options = {}) {
@@ -528,15 +667,17 @@
             const card = document.createElement('article');
             card.className = 'show-card overflow-hidden relative';
             
-            const imagePath = `/image/${encodeURIComponent(show.title)}.jpg`; // 使用 .jpg 格式
+            const fallbackImagePath = `/image/${encodeURIComponent(show.title)}.jpg`;
+            const imagePath = show.image_url || fallbackImagePath;
             const isLive = show.is_live || false; // 数据库字段：蛇形命名
             const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true; // 数据库字段：蛇形命名
             const escapedTitle = escapeHtml(show.title);
+            const escapedShowId = escapeHtml(show.id);
             
             card.innerHTML = `
-                <button type="button" class="card-hit-area" aria-label="打开节目：${escapedTitle}" data-show-id="${show.id}"></button>
+                <button type="button" class="card-hit-area" aria-label="打开节目：${escapedTitle}" data-show-id="${escapedShowId}"></button>
                 <div class="relative show-card-image">
-                    <img src="${imagePath}" alt="${escapedTitle}" class="w-full h-full object-cover" width="640" height="480" loading="lazy">
+                    <img src="${escapeHtml(imagePath)}" alt="${escapedTitle}" class="w-full h-full object-cover" width="640" height="480" loading="lazy" referrerpolicy="no-referrer">
                     ${isLive ? '<span class="badge badge-live animate-pulse">● 直播中</span>' : '<span class="badge badge-idle">待开播</span>'}
                 </div>
                 <div class="p-3 md:p-4">
@@ -547,10 +688,10 @@
                             ${requiresAuth ? '需要授权' : '公开节目'}
                         </span>
                         <div class="show-card-actions flex gap-2">
-                            <button type="button" class="watch-btn nf-button nf-button-primary px-3 md:px-4 py-2 text-sm whitespace-nowrap" data-show-id="${show.id}">
+                            <button type="button" class="watch-btn nf-button nf-button-primary px-3 md:px-4 py-2 text-sm whitespace-nowrap" data-show-id="${escapedShowId}">
                                 观看
                             </button>
-                            ${requiresAuth ? `<button type="button" class="request-btn nf-button nf-button-secondary px-3 py-2 text-sm whitespace-nowrap" data-show-id="${show.id}">申请</button>` : ''}
+                            ${requiresAuth ? `<button type="button" class="request-btn nf-button nf-button-secondary px-3 py-2 text-sm whitespace-nowrap" data-show-id="${escapedShowId}">申请</button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -559,6 +700,13 @@
             const cardHitArea = card.querySelector('.card-hit-area');
             cardHitArea.addEventListener('click', function() {
                 handleShowClick(this.getAttribute('data-show-id'));
+            });
+
+            const coverImage = card.querySelector('.show-card-image img');
+            coverImage.addEventListener('error', () => {
+                if (coverImage.dataset.fallbackApplied === 'true') return;
+                coverImage.dataset.fallbackApplied = 'true';
+                coverImage.src = fallbackImagePath;
             });
 
             // 为观看按钮单独添加事件监听器
@@ -610,7 +758,7 @@
 
         // Handle show click - 根据 requires_auth 决定是否需要登录
         function handleShowClick(showId) {
-            const show = Shows.find(s => s.id === showId);
+            const show = Shows.find((item) => String(item.id) === String(showId));
             if (!show) {
                 alert('节目不存在');
                 return;
@@ -661,7 +809,7 @@
         // Play stream with ArtPlayer
         function playStream(url, showId) {
             document.getElementById('player-section').classList.remove('hidden');
-            const show = Shows.find(s => s.id === showId);
+            const show = Shows.find((item) => String(item.id) === String(showId));
             const showTitle = show ? show.title : '节目';
             document.getElementById('now-playing-title').textContent = `正在播放: ${showTitle}`;
             document.getElementById('player-container').style.display = 'block';
@@ -737,6 +885,8 @@
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             const loginError = document.getElementById('login-error');
+            const submitButton = document.getElementById('email-login-button');
+            loginError.classList.add('hidden');
             
             if (!email || !password) {
                 loginError.textContent = '请填写完整信息';
@@ -745,6 +895,8 @@
             }
 
             try {
+                submitButton.disabled = true;
+                submitButton.textContent = '登录中…';
                 const response = await authFetch('/api/session/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -764,30 +916,125 @@
                     loginError.classList.remove('hidden');
                 }
             } catch (e) {
-                loginError.textContent = '无法连接到验证服务器';
+                loginError.textContent = '认证服务连接失败，请稍后重试';
                 loginError.classList.remove('hidden');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = '登录账户';
             }
+        }
+
+        function renderTurnstile(attempt = 0) {
+            const container = document.getElementById('register-turnstile');
+            const siteKey = authSettings.cf_turnstile_site_key || '';
+            if (!container || !siteKey) {
+                container?.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            if (turnstileWidgetId !== null) return;
+
+            if (!window.turnstile?.render) {
+                if (attempt < 50) window.setTimeout(() => renderTurnstile(attempt + 1), 120);
+                else {
+                    const errorElement = document.getElementById('register-error');
+                    errorElement.textContent = 'Cloudflare 验证组件加载超时，请刷新页面重试';
+                    errorElement.classList.remove('hidden');
+                }
+                return;
+            }
+
+            turnstileWidgetId = window.turnstile.render(container, {
+                sitekey: siteKey,
+                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                language: 'zh-CN',
+                appearance: 'interaction-only',
+                action: 'email_register',
+                callback: (token) => { turnstileToken = token; },
+                'expired-callback': () => { turnstileToken = ''; },
+                'timeout-callback': () => { turnstileToken = ''; },
+                'error-callback': () => {
+                    turnstileToken = '';
+                    const errorElement = document.getElementById('register-error');
+                    errorElement.textContent = 'Cloudflare 人机验证失败，请重试';
+                    errorElement.classList.remove('hidden');
+                },
+            });
+        }
+
+        function resetTurnstile() {
+            turnstileToken = '';
+            if (turnstileWidgetId !== null && window.turnstile?.reset) {
+                window.turnstile.reset(turnstileWidgetId);
+            }
+        }
+
+        window.addEventListener('nf-theme-change', () => {
+            if (turnstileWidgetId !== null && window.turnstile?.remove) {
+                window.turnstile.remove(turnstileWidgetId);
+                turnstileWidgetId = null;
+                turnstileToken = '';
+            }
+            if (document.getElementById('register-modal')?.classList.contains('active')) {
+                renderTurnstile();
+            }
+        });
+
+        function startRegisterCodeCountdown(seconds) {
+            const button = document.getElementById('send-register-code');
+            let remaining = Math.max(1, Number(seconds) || 60);
+            window.clearInterval(registerCodeTimer);
+            button.disabled = true;
+            button.textContent = `${remaining} 秒后重试`;
+            registerCodeTimer = window.setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    window.clearInterval(registerCodeTimer);
+                    registerCodeTimer = null;
+                    button.disabled = false;
+                    button.textContent = '发送验证码';
+                    return;
+                }
+                button.textContent = `${remaining} 秒后重试`;
+            }, 1000);
         }
 
         async function sendRegisterCode() {
             const email = document.getElementById('register-email').value.trim();
             const errorElement = document.getElementById('register-error');
+            const sendButton = document.getElementById('send-register-code');
+            errorElement.classList.add('hidden');
             if (!email) {
                 errorElement.textContent = '请先填写邮箱';
                 errorElement.classList.remove('hidden');
                 return;
             }
+            if (authSettings.cf_turnstile_site_key && !turnstileToken) {
+                errorElement.textContent = '请先完成 Cloudflare 人机验证';
+                errorElement.classList.remove('hidden');
+                renderTurnstile();
+                return;
+            }
             try {
+                sendButton.disabled = true;
+                sendButton.textContent = '发送中…';
                 const response = await authFetch('/api/session/verify-code', {
                     method: 'POST',
-                    body: JSON.stringify({ email }),
+                    body: JSON.stringify({ email, cf_token: turnstileToken, cf_action: 'email_register' }),
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.detail || data.error || '验证码发送失败');
-                alert(`验证码已发送，有效期 ${data.timeout} 秒`);
+                const successElement = document.getElementById('register-success');
+                successElement.textContent = `验证码已发送，有效期 ${data.timeout} 秒`;
+                successElement.classList.remove('hidden');
+                startRegisterCodeCountdown(data.timeout);
             } catch (error) {
                 errorElement.textContent = error.message || '验证码发送失败';
                 errorElement.classList.remove('hidden');
+                sendButton.disabled = false;
+                sendButton.textContent = '发送验证码';
+            } finally {
+                if (authSettings.cf_turnstile_site_key) resetTurnstile();
             }
         }
 
@@ -824,12 +1071,9 @@
             try {
                 const response = await authFetch('/api/session/register', {
                     method: 'POST',
-                    body: JSON.stringify({ email, password, code })
+                    body: JSON.stringify({ email, password, code, cf_token: turnstileToken })
                 });
-                
-                console.log('Register response status:', response.status);
                 const data = await response.json();
-                console.log('Register response data:', data);
                 
                 if (response.ok) {
                     successElement.textContent = '注册成功，已自动登录';
@@ -904,6 +1148,7 @@
             modalReturnFocus = document.activeElement;
             document.getElementById('register-modal').classList.add('active');
             document.body.style.overflow = 'hidden';
+            renderTurnstile();
             requestAnimationFrame(() => document.getElementById('register-email').focus());
         }
         
@@ -915,18 +1160,25 @@
             document.getElementById('register-password').value = '';
             document.getElementById('register-confirm-password').value = '';
             document.getElementById('register-code').value = '';
+            resetTurnstile();
             document.body.style.overflow = '';
             if (modalReturnFocus instanceof HTMLElement) modalReturnFocus.focus();
         }
         
         function switchToRegister() {
-            hideLoginModal();
-            showRegisterModal();
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('register-modal').classList.add('active');
+            document.getElementById('login-error').classList.add('hidden');
+            renderTurnstile();
+            requestAnimationFrame(() => document.getElementById('register-email').focus());
         }
         
         function switchToLogin() {
-            hideRegisterModal();
-            showLoginModal();
+            document.getElementById('register-modal').classList.remove('active');
+            document.getElementById('login-modal').classList.add('active');
+            document.getElementById('register-error').classList.add('hidden');
+            document.getElementById('register-success').classList.add('hidden');
+            requestAnimationFrame(() => document.getElementById('login-email').focus());
         }
 
         // Toggle user dashboard

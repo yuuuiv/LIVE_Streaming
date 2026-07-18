@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="/assets/neofantasy-theme.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -61,6 +61,32 @@
     </div>
 
     <section id="notice" class="admin-notice mb-4 hidden border p-4 text-sm"></section>
+    <section class="admin-card admin-import-card mb-6">
+      <div class="admin-toolbar">
+        <div>
+          <p class="admin-kicker">Schedule automation</p>
+          <h2 class="font-bold text-nf-brown">从活动页面加入节目单</h2>
+          <p class="mt-1 text-xs text-nf-grey">粘贴官方页面，自动提取主视觉、公演名、日程、出演，并按 DAY 生成可编辑草稿</p>
+        </div>
+      </div>
+      <form id="event-import-form" class="admin-import-form">
+        <label for="event-url" class="sr-only">官方活动页面地址</label>
+        <div class="admin-import-url-row">
+          <input id="event-url" type="url" required autocomplete="url" spellcheck="false" placeholder="https://bang-dream.com/events/..." class="admin-input">
+          <button id="parse-event" type="submit" class="nf-button nf-button-primary">解析页面</button>
+        </div>
+        <p class="admin-field-help">解析只生成预览；确认节目 ID、标题和说明后才会写入 Supabase。</p>
+      </form>
+      <div id="event-preview" class="admin-event-preview hidden" aria-live="polite">
+        <div id="event-source" class="admin-event-source"></div>
+        <div id="event-drafts" class="admin-event-drafts"></div>
+        <div class="admin-import-actions">
+          <p id="event-import-summary" class="text-sm text-nf-grey"></p>
+          <button id="import-shows" type="button" class="nf-button nf-button-accent">确认加入节目单</button>
+        </div>
+      </div>
+    </section>
+
     <section class="admin-card">
       <div class="admin-toolbar">
         <div>
@@ -107,6 +133,8 @@
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
   const statusText = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
   const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' });
+  let importDrafts = [];
+  let importSource = null;
 
   async function verifyAdmin() {
     const response = await fetch(`${AUTH}/api/session/me`, { headers: headers(), credentials: 'include' });
@@ -145,12 +173,123 @@
     await loadRequests();
   }
 
+  function japanDateTimeLocal(value) {
+    if (!value) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(value)).reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  }
+
+  function japanLocalToIso(value) {
+    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+    if (!match) return '';
+    const [, year, month, day, hour, minute] = match.map(Number);
+    return new Date(Date.UTC(year, month - 1, day, hour - 9, minute)).toISOString();
+  }
+
+  function renderEventPreview(data) {
+    importSource = data.source || null;
+    importDrafts = data.shows || [];
+    const preview = document.getElementById('event-preview');
+    const source = document.getElementById('event-source');
+    const drafts = document.getElementById('event-drafts');
+    source.innerHTML = `
+      ${importSource?.image_url ? `<img src="${escapeHtml(importSource.image_url)}" alt="${escapeHtml(importSource.title || '活动主视觉')}" referrerpolicy="no-referrer">` : ''}
+      <div><span class="status-pill">解析完成</span><h3>${escapeHtml(importSource?.title || '活动页面')}</h3><p>${escapeHtml(importSource?.venue || '未识别会场')} · ${escapeHtml(importSource?.performers || '未识别出演')}</p></div>`;
+    drafts.innerHTML = importDrafts.map((show, index) => `
+      <article class="admin-show-draft" data-index="${index}">
+        <div class="admin-show-draft-heading"><span>${escapeHtml(show.event_day || `节目 ${index + 1}`)}</span><time>${escapeHtml(japanDateTimeLocal(show.starts_at).replace('T', ' '))} JST</time></div>
+        <div class="admin-show-fields">
+          <label>节目 ID<input class="admin-input" data-field="id" value="${escapeHtml(show.id)}" required></label>
+          <label>DAY 标识<input class="admin-input" data-field="event_day" value="${escapeHtml(show.event_day || '')}"></label>
+          <label class="admin-field-wide">节目标题<input class="admin-input" data-field="title" value="${escapeHtml(show.title)}" required></label>
+          <label class="admin-field-wide">开演时间（日本时间）<input class="admin-input" data-field="starts_at" type="datetime-local" value="${escapeHtml(japanDateTimeLocal(show.starts_at))}" required></label>
+          <label class="admin-field-wide">主视觉 URL<input class="admin-input" data-field="image_url" type="url" value="${escapeHtml(show.image_url || '')}"></label>
+          <label class="admin-field-wide">节目说明<textarea class="admin-input admin-textarea" data-field="description" rows="8">${escapeHtml(show.description || '')}</textarea></label>
+        </div>
+        <div class="admin-show-flags">
+          <label><input data-field="requires_auth" type="checkbox" ${show.requires_auth !== false ? 'checked' : ''}> 需要登录授权</label>
+          <label><input data-field="is_live" type="checkbox" ${show.is_live === true ? 'checked' : ''}> 当前正在直播</label>
+        </div>
+      </article>`).join('');
+    document.getElementById('event-import-summary').textContent = `将写入 ${importDrafts.length} 个节目；相同 ID 会更新现有节目。`;
+    preview.classList.remove('hidden');
+    preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function collectEventDrafts() {
+    return [...document.querySelectorAll('.admin-show-draft')].map((card, index) => {
+      const original = importDrafts[index] || {};
+      const value = (field) => card.querySelector(`[data-field="${field}"]`)?.value.trim() || '';
+      return {
+        ...original,
+        id: value('id'),
+        event_day: value('event_day'),
+        title: value('title'),
+        starts_at: japanLocalToIso(value('starts_at')),
+        image_url: value('image_url'),
+        description: value('description'),
+        requires_auth: card.querySelector('[data-field="requires_auth"]').checked,
+        is_live: card.querySelector('[data-field="is_live"]').checked,
+      };
+    });
+  }
+
+  async function previewEventImport(event) {
+    event.preventDefault();
+    const button = document.getElementById('parse-event');
+    const url = document.getElementById('event-url').value.trim();
+    button.disabled = true;
+    button.textContent = '解析中…';
+    try {
+      const response = await request('/api/admin/shows/preview-import', { method: 'POST', body: JSON.stringify({ url }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '页面解析失败');
+      renderEventPreview(data);
+      notice(`已解析 ${data.shows?.length || 0} 个节目草稿，请检查后确认导入。`);
+    } catch (error) {
+      notice(error.message || '页面解析失败', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = '解析页面';
+    }
+  }
+
+  async function importShows() {
+    const button = document.getElementById('import-shows');
+    const shows = collectEventDrafts();
+    if (!shows.length) return notice('没有可导入的节目草稿', true);
+    if (!confirm(`确认将 ${shows.length} 个节目写入节目单吗？相同 ID 的节目会被更新。`)) return;
+    button.disabled = true;
+    button.textContent = '写入中…';
+    try {
+      const response = await request('/api/admin/shows/import', {
+        method: 'POST',
+        body: JSON.stringify({ source_url: importSource?.url || '', shows }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '节目导入失败');
+      importDrafts = data.shows || shows;
+      notice(`已成功加入 ${data.count || shows.length} 个节目。`);
+      document.getElementById('event-import-summary').textContent = `已写入 ${data.count || shows.length} 个节目，可返回首页查看。`;
+    } catch (error) {
+      notice(error.message || '节目导入失败', true);
+    } finally {
+      button.disabled = false;
+      button.textContent = '确认加入节目单';
+    }
+  }
+
   async function init() {
     try { await verifyAdmin(); await loadRequests(); }
     catch (error) { notice(error.message || '无法加载控制台', true); document.getElementById('requests').innerHTML = ''; }
   }
   document.getElementById('refresh').onclick = init;
   document.getElementById('status-filter').onchange = loadRequests;
+  document.getElementById('event-import-form').onsubmit = previewEventImport;
+  document.getElementById('import-shows').onclick = importShows;
   init();
 </script>
 </body>
