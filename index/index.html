@@ -147,6 +147,9 @@
                             登出
                         </button>
                     </div>
+                    <a id="admin-link" href="/admin/" class="hidden px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition">
+                        管理控制台
+                    </a>
                 </div>
                 
                 <!-- 移动端按钮组 -->
@@ -186,6 +189,9 @@
                         <button onclick="logout(); toggleMobileMenu();" class="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
                             登出
                         </button>
+                        <a id="admin-link-mobile" href="/admin/" class="hidden block w-full px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition text-center">
+                            管理控制台
+                        </a>
                     </div>
                 </div>
             </div>
@@ -240,8 +246,8 @@
             <form id="login-form" onsubmit="event.preventDefault(); login();">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium mb-1">用户名</label>
-                        <input type="text" id="login-username" required
+                        <label class="block text-sm font-medium mb-1">邮箱</label>
+                        <input type="email" id="login-email" required autocomplete="email"
                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
                     </div>
                     
@@ -279,8 +285,8 @@
             <form id="register-form" onsubmit="event.preventDefault(); register();">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium mb-1">用户名</label>
-                        <input type="text" id="register-username" required
+                        <label class="block text-sm font-medium mb-1">邮箱</label>
+                        <input type="email" id="register-email" required autocomplete="email"
                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
                     </div>
                     
@@ -294,6 +300,18 @@
                         <label class="block text-sm font-medium mb-1">确认密码</label>
                         <input type="password" id="register-confirm-password" required
                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">邮箱验证码</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="register-code" inputmode="numeric" maxlength="6" required
+                                   class="min-w-0 flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base">
+                            <button type="button" id="send-register-code" onclick="sendRegisterCode()"
+                                    class="shrink-0 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition">
+                                发送验证码
+                            </button>
+                        </div>
                     </div>
                     
                     <div id="register-error" class="text-red-500 text-sm hidden"></div>
@@ -319,15 +337,17 @@
 
     <script>
         // Configuration
-        const API_BASE_URL = 'https://api.neofantasy.online'; // 修改为后端服务器地址
-        const TOKEN_KEY = 'user_token';
+        const API_BASE_URL = 'https://api.neofantasy.online';
+        const AUTH_BASE_URL = 'https://auth.neofantasy.online';
+        const TOKEN_KEY = 'nf_access_token';
+        const USER_KEY = 'nf_user';
         const PURCHASED_SHOWS_KEY = 'purchased_shows';
-        const USERNAME_KEY = 'username';
         
         // Global variables
         let artPlayer = null;
         let currentShowId = null;
         let purchasedShows = [];
+        let currentUser = null;
         
         // shows data - 将从 API 动态加载
         let Shows = [];
@@ -385,20 +405,65 @@
             pvEl.textContent = '当前不可访问';
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             initTheme(); // 初始化主题
+            await restoreSession();
             updateAuthUI(); // 初始化认证状态显示
             loadShows(); // 动态加载节目列表
             loadBuildInfo(); // 加载构建信息
             loadSitePV(); // 加载站点访问量
         });
 
-        // 更新认证UI状态 - 根据localStorage读取token显示对应UI
+        function currentToken() {
+            return localStorage.getItem(TOKEN_KEY) || '';
+        }
+
+        async function restoreSession() {
+            const token = currentToken();
+            try {
+                const response = await fetch(`${AUTH_BASE_URL}/api/session/me`, {
+                    credentials: 'include',
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                if (!response.ok) throw new Error('session expired');
+                const data = await response.json();
+                currentUser = data.user;
+                localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+            } catch (_) {
+                currentUser = null;
+                localStorage.removeItem(TOKEN_KEY);
+                localStorage.removeItem(USER_KEY);
+            }
+        }
+
+        async function authFetch(path, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+            const token = currentToken();
+            if (token) headers.Authorization = `Bearer ${token}`;
+            return fetch(`${AUTH_BASE_URL}${path}`, {
+                ...options,
+                headers,
+                credentials: 'include',
+            });
+        }
+
+        async function apiFetch(path, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+            const token = currentToken();
+            if (token) headers.Authorization = `Bearer ${token}`;
+            return fetch(`${API_BASE_URL}${path}`, {
+                ...options,
+                headers,
+                credentials: 'include',
+            });
+        }
+
+        // 更新认证 UI：身份来自 auth 签发的会话，不再读取 URL 中的用户名。
         function updateAuthUI() {
-            const token = localStorage.getItem(TOKEN_KEY);
-            const username = localStorage.getItem(USERNAME_KEY);
-            
-            if (token && username) {
+            const username = currentUser?.email || '';
+            const isAdmin = currentUser?.role === 'admin';
+
+            if (currentUser) {
                 // 用户已登录：隐藏登录/注册按钮，显示用户菜单
                 // 桌面端
                 document.getElementById('auth-buttons').classList.add('hidden');
@@ -413,8 +478,8 @@
                 document.getElementById('user-role-mobile').textContent = username;
                 document.getElementById('user-role-mobile').classList.remove('text-yellow-600', 'dark:text-yellow-400');
                 document.getElementById('user-role-mobile').classList.add('text-purple-600', 'dark:text-purple-400');
-                
-                // 加载已购节目列表
+                document.getElementById('admin-link').classList.toggle('hidden', !isAdmin);
+                document.getElementById('admin-link-mobile').classList.toggle('hidden', !isAdmin);
                 updatePurchasedShows();
             } else {
                 // 用户未登录：显示登录/注册按钮，隐藏用户菜单
@@ -431,6 +496,8 @@
                 document.getElementById('user-role-mobile').textContent = '未登录';
                 document.getElementById('user-role-mobile').classList.remove('text-purple-600', 'dark:text-purple-400');
                 document.getElementById('user-role-mobile').classList.add('text-yellow-600', 'dark:text-yellow-400');
+                document.getElementById('admin-link').classList.add('hidden');
+                document.getElementById('admin-link-mobile').classList.add('hidden');
             }
         }
 
@@ -478,9 +545,12 @@
                         <span class="text-xs md:text-sm ${requiresAuth ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}">
                             ${requiresAuth ? '🔒 带锁转播' : '🆓 开锁转播'}
                         </span>
-                        <button class="watch-btn px-3 md:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white transition text-sm whitespace-nowrap" data-show-id="${show.id}">
-                            观看
-                        </button>
+                        <div class="flex gap-2">
+                            <button class="watch-btn px-3 md:px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white transition text-sm whitespace-nowrap" data-show-id="${show.id}">
+                                观看
+                            </button>
+                            ${requiresAuth ? `<button class="request-btn px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white transition text-sm whitespace-nowrap" data-show-id="${show.id}">申请</button>` : ''}
+                        </div>
                     </div>
                 </div>
             `;
@@ -491,6 +561,13 @@
                 e.stopPropagation(); // 阻止事件冒泡
                 handleShowClick(this.getAttribute('data-show-id'));
             });
+            const requestBtn = card.querySelector('.request-btn');
+            if (requestBtn) {
+                requestBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    requestPermission(this.getAttribute('data-show-id'));
+                });
+            }
             
             // 卡片其他区域点击也触发观看
             card.addEventListener('click', function(e) {
@@ -538,7 +615,6 @@
 
             currentShowId = showId;
             const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true;
-            const token = localStorage.getItem(TOKEN_KEY);
             
             // 如果节目不需要鉴权，直接允许观看
             if (!requiresAuth) {
@@ -549,14 +625,34 @@
             }
             
             // 需要鉴权的节目，检查是否登录
-            if (!token) {
+            if (!currentUser) {
                 showLoginModal();
                 return;
             }
             
             // 已登录，在新标签页打开播放器
-            const playerUrl = `player.html?show_id=${encodeURIComponent(showId)}&user_token=${encodeURIComponent(token)}`;
+            const playerUrl = `player.html?show_id=${encodeURIComponent(showId)}`;
             window.open(playerUrl, '_blank');
+        }
+
+        async function requestPermission(showId) {
+            if (!currentUser) {
+                showLoginModal();
+                return;
+            }
+            const reason = prompt('请填写申请原因（可选）', '申请观看该节目');
+            if (reason === null) return;
+            try {
+                const response = await apiFetch('/api/permission-requests', {
+                    method: 'POST',
+                    body: JSON.stringify({ show_id: showId, reason }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || '申请失败');
+                alert('申请已提交，请等待管理员审核。');
+            } catch (error) {
+                alert(error.message || '申请失败');
+            }
         }
 
         // Play stream with ArtPlayer
@@ -632,38 +728,33 @@
             document.getElementById('player-container').style.display = 'none';
         }
 
-        // Login function - 登录函数，成功后持久化token和username
+        // 登录和注册全部交给 auth 服务；本页只保存短期访问令牌作为 Cookie 失效时的回退。
         async function login() {
-            const username = document.getElementById('login-username').value;
+            const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             const loginError = document.getElementById('login-error');
             
-            if (!username || !password) {
+            if (!email || !password) {
                 loginError.textContent = '请填写完整信息';
                 loginError.classList.remove('hidden');
                 return;
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                const response = await authFetch('/api/session/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }) // 必须对应后端的 req.body.username
+                    body: JSON.stringify({ email, password })
                 });
 
                 const data = await response.json();
                 if (response.ok) {
-                    // 成功登录，保存token和username到localStorage
-                    localStorage.setItem(TOKEN_KEY, data.token);
-                    localStorage.setItem(USERNAME_KEY, username); // 关键：保存用户名以实现持久化
-                    // 保存后端返回的真实已购列表
-                    localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(data.purchased_shows || []));
-                    
-                    // 更新UI而不是刷新页面（可选：刷新更稳妥）
+                    localStorage.setItem(TOKEN_KEY, data.access_token || '');
+                    currentUser = data.user;
+                    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
                     hideLoginModal();
                     updateAuthUI();
                     alert('登录成功！');
-                    // 如果要刷新页面：location.reload();
                 } else {
                     loginError.textContent = data.error || '登录失败';
                     loginError.classList.remove('hidden');
@@ -674,11 +765,33 @@
             }
         }
 
-        // Register function
+        async function sendRegisterCode() {
+            const email = document.getElementById('register-email').value.trim();
+            const errorElement = document.getElementById('register-error');
+            if (!email) {
+                errorElement.textContent = '请先填写邮箱';
+                errorElement.classList.remove('hidden');
+                return;
+            }
+            try {
+                const response = await authFetch('/api/session/verify-code', {
+                    method: 'POST',
+                    body: JSON.stringify({ email }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || data.error || '验证码发送失败');
+                alert(`验证码已发送，有效期 ${data.timeout} 秒`);
+            } catch (error) {
+                errorElement.textContent = error.message || '验证码发送失败';
+                errorElement.classList.remove('hidden');
+            }
+        }
+
         async function register() {
-            const username = document.getElementById('register-username').value.trim();
+            const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
             const confirmPassword = document.getElementById('register-confirm-password').value;
+            const code = document.getElementById('register-code').value.trim();
             const errorElement = document.getElementById('register-error');
             const successElement = document.getElementById('register-success');
             
@@ -686,8 +799,8 @@
             successElement.classList.add('hidden');
             
             // Validation
-            if (!username || !password) {
-                errorElement.textContent = '用户名和密码不能为空';
+            if (!email || !password || !code) {
+                errorElement.textContent = '邮箱、密码和验证码不能为空';
                 errorElement.classList.remove('hidden');
                 return;
             }
@@ -698,42 +811,30 @@
                 return;
             }
             
-            if (password.length < 6) {
-                errorElement.textContent = '密码长度至少6位';
+            if (password.length < 8) {
+                errorElement.textContent = '密码长度至少8位';
                 errorElement.classList.remove('hidden');
                 return;
             }
             
             try {
-                console.log('Attempting registration for user:', username);
-                const response = await fetch(`${API_BASE_URL}/api/register`, {
+                const response = await authFetch('/api/session/register', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ email, password, code })
                 });
                 
                 console.log('Register response status:', response.status);
                 const data = await response.json();
                 console.log('Register response data:', data);
                 
-                if (response.status === 201) {
-                    // Registration successful
-                    successElement.textContent = '注册成功！请登录';
+                if (response.ok) {
+                    successElement.textContent = '注册成功，已自动登录';
                     successElement.classList.remove('hidden');
-                    
-                    // Clear form
-                    document.getElementById('register-username').value = '';
-                    document.getElementById('register-password').value = '';
-                    document.getElementById('register-confirm-password').value = '';
-                    
-                    // Auto switch to login after 2 seconds
-                    setTimeout(() => {
-                        hideRegisterModal();
-                        showLoginModal();
-                        document.getElementById('login-username').value = username;
-                    }, 2000);
+                    localStorage.setItem(TOKEN_KEY, data.access_token || '');
+                    currentUser = data.user;
+                    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+                    updateAuthUI();
+                    setTimeout(hideRegisterModal, 500);
                 } else {
                     errorElement.textContent = data.error || '注册失败';
                     errorElement.classList.remove('hidden');
@@ -745,13 +846,14 @@
             }
         }
 
-        // Logout function - 登出函数，清除所有localStorage数据并更新UI
-        function logout() {
+        // Logout function
+        async function logout() {
             if (confirm('确定要退出登录吗？')) {
-                // 清除所有认证相关的localStorage数据
+                try { await authFetch('/api/session/logout', { method: 'POST' }); } catch (_) {}
                 localStorage.removeItem(TOKEN_KEY);
-                localStorage.removeItem(USERNAME_KEY);
+                localStorage.removeItem(USER_KEY);
                 localStorage.removeItem(PURCHASED_SHOWS_KEY);
+                currentUser = null;
                 
                 // 关闭播放器
                 closePlayer();
@@ -767,10 +869,9 @@
             }
         }
 
-        // Update purchased shows from localStorage
         function updatePurchasedShows() {
             const stored = localStorage.getItem(PURCHASED_SHOWS_KEY);
-            purchasedShows = stored ? JSON.parse(stored) : [];
+            try { purchasedShows = stored ? JSON.parse(stored) : []; } catch (_) { purchasedShows = []; }
         }
 
         // Get purchased shows
@@ -786,7 +887,7 @@
         function hideLoginModal() {
             document.getElementById('login-modal').classList.remove('active');
             document.getElementById('login-error').classList.add('hidden');
-            document.getElementById('login-username').value = '';
+            document.getElementById('login-email').value = '';
             document.getElementById('login-password').value = '';
         }
         
@@ -798,9 +899,10 @@
             document.getElementById('register-modal').classList.remove('active');
             document.getElementById('register-error').classList.add('hidden');
             document.getElementById('register-success').classList.add('hidden');
-            document.getElementById('register-username').value = '';
+            document.getElementById('register-email').value = '';
             document.getElementById('register-password').value = '';
             document.getElementById('register-confirm-password').value = '';
+            document.getElementById('register-code').value = '';
         }
         
         function switchToRegister() {
@@ -874,9 +976,7 @@
         // Update user dashboard - 实时获取用户订阅，不依赖缓存
         async function updateUserDashboard() {
             const container = document.getElementById('purchased-shows');
-            const username = localStorage.getItem(USERNAME_KEY);
-            
-            if (!username) {
+            if (!currentUser) {
                 container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 col-span-full text-center py-8">请登录后查看订阅</p>';
                 return;
             }
@@ -886,7 +986,7 @@
             
             try {
                 // 从后端实时获取用户的已购节目列表
-                const response = await fetch(`${API_BASE_URL}/api/user-purchases?username=${encodeURIComponent(username)}`);
+                const response = await apiFetch('/api/user-purchases');
                 
                 if (!response.ok) {
                     container.innerHTML = '<p class="text-red-500 dark:text-red-400 col-span-full text-center py-8">获取订阅失败，请稍后重试</p>';
@@ -896,7 +996,7 @@
                 const data = await response.json();
                 const purchasedShows = data.purchased_shows || [];
                 
-                // 更新 localStorage 缓存，确保其他地方的权限判断也是最新的
+                // 仅作界面缓存，权限判断始终由后端完成。
                 localStorage.setItem(PURCHASED_SHOWS_KEY, JSON.stringify(purchasedShows));
                 
                 // 清空容器

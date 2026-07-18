@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeoFantasy Live · 管理控制台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  <main class="mx-auto max-w-6xl p-4 sm:p-8">
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">NeoFantasy Live</p>
+        <h1 class="mt-1 text-3xl font-bold">权限申请控制台</h1>
+        <p id="identity" class="mt-2 text-sm text-slate-500">正在验证管理员身份…</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="refresh" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">刷新</button>
+        <a href="/index/" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">返回站点</a>
+      </div>
+    </div>
+
+    <section id="notice" class="mb-4 hidden rounded-lg border p-4 text-sm"></section>
+    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+        <h2 class="font-semibold">权限申请</h2>
+        <select id="status-filter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="pending">待审核</option>
+          <option value="approved">已通过</option>
+          <option value="rejected">已拒绝</option>
+          <option value="">全部</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr><th class="px-4 py-3">用户</th><th class="px-4 py-3">节目</th><th class="px-4 py-3">理由</th><th class="px-4 py-3">状态</th><th class="px-4 py-3">时间</th><th class="px-4 py-3">操作</th></tr>
+          </thead>
+          <tbody id="requests" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="hidden p-10 text-center text-sm text-slate-500">暂无申请</div>
+    </section>
+  </main>
+<script>
+  const API = 'https://api.neofantasy.online';
+  const AUTH = 'https://auth.neofantasy.online';
+  const TOKEN_KEY = 'nf_access_token';
+  const token = () => localStorage.getItem(TOKEN_KEY) || '';
+  const headers = () => {
+    const value = { 'Content-Type': 'application/json' };
+    if (token()) value.Authorization = `Bearer ${token()}`;
+    return value;
+  };
+  const request = (path, options = {}) => fetch(`${API}${path}`, { ...options, headers: { ...headers(), ...(options.headers || {}) }, credentials: 'include' });
+  const notice = (message, error = false) => {
+    const el = document.getElementById('notice');
+    el.textContent = message;
+    el.className = `mb-4 rounded-lg border p-4 text-sm ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
+    el.classList.remove('hidden');
+  };
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
+  const statusText = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
+
+  async function verifyAdmin() {
+    const response = await fetch(`${AUTH}/api/session/me`, { headers: headers(), credentials: 'include' });
+    const data = await response.json();
+    if (!response.ok || data.user?.role !== 'admin') throw new Error('当前账号不是管理员');
+    document.getElementById('identity').textContent = `已登录：${data.user.email} · 管理员`;
+  }
+
+  async function loadRequests() {
+    const filter = document.getElementById('status-filter').value;
+    const suffix = filter ? `?status=${encodeURIComponent(filter)}` : '';
+    const response = await request(`/api/admin/permission-requests${suffix}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || '获取申请失败');
+    const rows = data.requests || [];
+    const body = document.getElementById('requests');
+    document.getElementById('empty').classList.toggle('hidden', rows.length !== 0);
+    body.innerHTML = rows.map((item) => `
+      <tr>
+        <td class="px-4 py-4 font-medium">${escapeHtml(item.user_email)}</td>
+        <td class="px-4 py-4">${escapeHtml(item.show_id)}</td>
+        <td class="max-w-xs px-4 py-4 text-slate-600">${escapeHtml(item.reason || '—')}</td>
+        <td class="px-4 py-4"><span class="rounded-full bg-slate-100 px-2 py-1 text-xs">${statusText[item.status] || escapeHtml(item.status)}</span></td>
+        <td class="whitespace-nowrap px-4 py-4 text-slate-500">${escapeHtml(new Date(item.created_at).toLocaleString('zh-CN'))}</td>
+        <td class="whitespace-nowrap px-4 py-4">${item.status === 'pending' ? `<button class="mr-2 rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700" onclick="review('${item.id}','approved')">通过</button><button class="rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700" onclick="review('${item.id}','rejected')">拒绝</button>` : '—'}</td>
+      </tr>`).join('');
+  }
+
+  async function review(id, status) {
+    const reviewNote = prompt(status === 'approved' ? '备注（可选）' : '拒绝原因（可选）', '')
+    if (reviewNote === null) return;
+    const response = await request(`/api/admin/permission-requests/${encodeURIComponent(id)}/review`, { method: 'POST', body: JSON.stringify({ status, review_note: reviewNote }) });
+    const data = await response.json();
+    if (!response.ok) return notice(data.error || '审核失败', true);
+    notice(status === 'approved' ? '已通过申请并授予节目权限。' : '已拒绝申请。');
+    await loadRequests();
+  }
+
+  async function init() {
+    try { await verifyAdmin(); await loadRequests(); }
+    catch (error) { notice(error.message || '无法加载控制台', true); document.getElementById('requests').innerHTML = ''; }
+  }
+  document.getElementById('refresh').onclick = init;
+  document.getElementById('status-filter').onchange = loadRequests;
+  init();
+</script>
+</body>
+</html>

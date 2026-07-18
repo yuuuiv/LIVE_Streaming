@@ -450,10 +450,11 @@
         // 自动检测 API 地址 - 开发环境使用 localhost，生产环境使用生产 API
         const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const API_BASE_URL = isDevelopment ? 'http://localhost:5000' : 'https://api.neofantasy.online';
+        const TOKEN_KEY = 'nf_access_token';
         let artPlayer = null;
         let heartbeatTimer = null;
         let sessionId = null;
-        let username = null;
+        let isAuthenticated = false;
         const VOLUME_STEP = 0.1; 
         let volumePercentageControl = null;
         let volumeSliderUpdate = null;
@@ -506,9 +507,13 @@
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
             return {
-                show_id: params.get('show_id'),
-                user_token: params.get('user_token')
+                show_id: params.get('show_id')
             };
+        }
+
+        function apiHeaders() {
+            const token = localStorage.getItem(TOKEN_KEY);
+            return token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : { 'Content-Type': 'application/json' };
         }
         
         // 显示错误信息
@@ -931,13 +936,14 @@
         }
 
         async function startHeartbeat() {
-            if (!username || !sessionId) return;
+            if (!isAuthenticated || !sessionId) return;
             heartbeatTimer = setInterval(async () => {
                 try {
                     const resp = await fetch(`${API_BASE_URL}/api/heartbeat`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, session_id: sessionId })
+                        headers: apiHeaders(),
+                        credentials: 'include',
+                        body: JSON.stringify({ session_id: sessionId })
                     });
 
                     if (resp.status === 403) {
@@ -958,10 +964,9 @@
         
         // 获取视频流并鉴权
         async function loadStream() {
-            const { show_id, user_token } = getUrlParams();
-            username = user_token;
+            const { show_id } = getUrlParams();
             
-            // 参数校验 - 只检查 show_id，免费节目允许无 user_token
+            // 参数校验 - 只检查 show_id，身份由 HttpOnly Cookie 或 Bearer token 提供
             if (!show_id) {
                 showError(
                     '参数错误',
@@ -973,12 +978,11 @@
             
             try {
                 console.log('Requesting stream for show:', show_id);
-                // 构造请求 URL - 如果没有 user_token 就不传
-                const url = user_token 
-                    ? `${API_BASE_URL}/get-stream?show_id=${show_id}&user_token=${user_token}`
-                    : `${API_BASE_URL}/get-stream?show_id=${show_id}`;
-                
-                const response = await fetch(url);
+                const url = `${API_BASE_URL}/get-stream?show_id=${encodeURIComponent(show_id)}`;
+                const response = await fetch(url, {
+                    headers: apiHeaders(),
+                    credentials: 'include',
+                });
                 console.log('Response status:', response.status);
                 
                 if (response.ok) {
@@ -989,8 +993,8 @@
                     // 初始化播放器
                     initPlayer(data.url, show_id);
                     
-                    // 只有当有 user_token 和 session_id 时才启动心跳检测
-                    if (username && sessionId) {
+                    isAuthenticated = Boolean(sessionId);
+                    if (isAuthenticated && sessionId) {
                         startHeartbeat();
                     } else {
                         console.log('免费节目，跳过心跳检测');
