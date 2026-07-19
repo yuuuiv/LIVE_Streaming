@@ -189,7 +189,7 @@
                         </button>
                     </div>
                     <a id="admin-link" href="/admin/" class="nf-icon-button hidden" aria-label="管理控制台" title="管理控制台">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14M14.83 9.17a4 4 0 0 1 0 5.66M9.17 9.17a4 4 0 0 0 0 5.66"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     </a>
                 </div>
                 
@@ -705,6 +705,26 @@
             }
         }
 
+        function parseShowDate(value) {
+            const text = String(value || '').trim();
+            if (!text) return null;
+            const compactDate = /^(\d{4})(\d{2})(\d{2})$/.exec(text);
+            if (compactDate) {
+                // Event dates are published in Japan time; treat a date-only
+                // value as ending at the end of that day.
+                const parsed = new Date(`${compactDate[1]}-${compactDate[2]}-${compactDate[3]}T23:59:59+09:00`);
+                return Number.isNaN(parsed.getTime()) ? null : parsed;
+            }
+            const parsed = new Date(text);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        function getShowStatus(show) {
+            if (show.is_live) return 'live';
+            const startsAt = parseShowDate(show.starts_at || show.start_time || show.event_day);
+            return startsAt && startsAt.getTime() <= Date.now() ? 'ended' : 'pending';
+        }
+
         // Create show card element - flex column 布局，按钮统一在底部
         function createShowCard(show) {
             const card = document.createElement('article');
@@ -712,7 +732,7 @@
 
             const fallbackImagePath = `/image/${encodeURIComponent(show.title)}.jpg`;
             const imagePath = show.image_url || show.cover_url || fallbackImagePath;
-            const isLive = show.is_live || false;
+            const showStatus = getShowStatus(show);
             const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true;
             const escapedTitle = escapeHtml(show.title);
             const escapedShowId = escapeHtml(show.id);
@@ -736,7 +756,7 @@
                 <button type="button" class="card-hit-area" aria-label="打开节目：${escapedTitle}" data-show-id="${escapedShowId}"></button>
                 <div class="relative show-card-image">
                     <img src="${escapeHtml(imagePath)}" alt="${escapedTitle}" class="w-full h-full object-cover" width="640" height="480" loading="lazy" referrerpolicy="no-referrer">
-                    ${isLive ? '<span class="badge badge-live animate-pulse">● 直播中</span>' : '<span class="badge badge-idle">待开播</span>'}
+                    ${showStatus === 'live' ? '<span class="badge badge-live animate-pulse">● 直播中</span>' : showStatus === 'ended' ? '<span class="badge badge-ended">已结束</span>' : '<span class="badge badge-idle">待开播</span>'}
                 </div>
                 <div class="p-3 md:p-4 flex flex-col flex-1">
                     <h3 class="text-sm md:text-base font-bold mb-2 line-clamp-2">${escapedTitle}</h3>
