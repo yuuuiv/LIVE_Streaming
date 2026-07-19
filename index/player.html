@@ -51,8 +51,8 @@
     </script>
     
     <!-- ArtPlayer CSS & JS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.css">
-    <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/artplayer@latest/dist/artplayer.css">
+    <script src="https://cdn.jsdelivr.net/npm/artplayer@5.4.0/dist/artplayer.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
     <style>
@@ -259,184 +259,198 @@
             font-size: 1.5rem;
         }
 
-        /* ArtPlayer 进度条修复，防止被截断 */
-        .art-video-player {
+        /* ArtPlayer 控制栏：左右分组、底部渐变和可点击的进度条 */
+        #player-container .art-video-player {
             width: 100% !important;
             height: 100% !important;
+            font-family: 'JetBrains Mono', 'Noto Sans SC', sans-serif;
         }
-        
-        .art-bottom {
-            padding-bottom: 0 !important;
+
+        #player-container .art-bottom {
+            padding: 44px 14px 8px !important;
+            background: linear-gradient(to top, rgba(5, 10, 13, .78), rgba(5, 10, 13, 0)) !important;
         }
-        
-        .art-controls {
+
+        #player-container .art-controls {
             bottom: 0 !important;
+            min-height: 40px;
+            gap: 3px;
+            align-items: center;
         }
-        
-        /* 强制设置控制条位置，确保完全可见 */
-        .art-control-bar {
-            bottom: 2px !important;
+
+        #player-container .art-controls-left,
+        #player-container .art-controls-right {
+            min-width: 0;
+            gap: 2px;
+            align-items: center;
         }
-        
-        /* 进度条样式优化 - 增加悬停高度，便于点击 */
-        .art-control-progress {
+
+        #player-container .art-control {
+            min-width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            transition: background-color .18s ease, color .18s ease;
+        }
+
+        #player-container .art-control:hover,
+        #player-container .art-control:focus-visible {
+            background: rgba(255, 255, 255, .14);
+            outline: none;
+        }
+
+        /* ArtPlayer 5.x 使用 .art-progress、.art-progress-loaded、.art-progress-played */
+        #player-container .art-progress {
             cursor: pointer;
             height: 5px;
-            transition: height 0.2s ease;
+            transition: height .2s ease, opacity .2s ease;
         }
-        
-        /* 进度条悬停时增大高度 */
-        .art-control-progress:hover {
+
+        #player-container .art-progress .art-control-progress {
+            height: 5px;
+        }
+
+        #player-container .art-progress:hover,
+        #player-container .art-progress:focus-within {
             height: 8px;
         }
-        
-        /* 全屏下的进度条优化 */
-        #player-container:fullscreen .art-control-progress,
-        #player-container:-webkit-full-screen .art-control-progress,
-        #player-container:-moz-full-screen .art-control-progress,
-        #player-container:-ms-fullscreen .art-control-progress {
-            height: 6px;
+
+        #player-container .art-progress:hover .art-control-progress,
+        #player-container .art-progress:focus-within .art-control-progress {
+            height: 8px;
         }
-        
-        #player-container:fullscreen .art-control-progress:hover,
-        #player-container:-webkit-full-screen .art-control-progress:hover,
-        #player-container:-moz-full-screen .art-control-progress:hover,
-        #player-container:-ms-fullscreen .art-control-progress:hover {
-            height: 10px;
+
+        #player-container .art-progress-loaded {
+            background-color: rgba(255, 255, 255, .3) !important;
         }
-        
-        /* 缓存条颜色与进度条区分 */
-        .art-control-progress .art-control-progress-load {
-            background-color: rgba(255, 255, 255, 0.3) !important;
+
+        #player-container .art-progress-played {
+            background: #a9d1d0 !important;
         }
-        
-        /* 当前进度条 */
-        .art-control-progress .art-control-progress-current {
-            background-color: #7d98a1 !important;
-        }
-        
-        /* 确保音量控件显示 */
-        .art-control-volume {
+
+        #player-container .art-control-volume {
             display: flex !important;
         }
-        
-        /* 隐藏 ArtPlayer 默认的垂直音量面板（黑色方框） */
-        .art-volume-panel {
+
+        /* 自定义音量滑杆替代默认的垂直浮层，桌面端更容易精确操作 */
+        #player-container .art-volume-panel {
             display: none !important;
         }
-        
-        /* 自定义音量百分比显示在控制栏上 */
-        .art-control-volume-percentage {
+
+        #player-container .art-control-volume-percentage {
             display: flex;
             align-items: center;
-            margin: 0 0.25rem;
-            padding: 0;
-            color: #fff;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: default;
-            -webkit-user-select: none;
+            min-width: 38px;
+            margin: 0 2px;
+            color: rgba(255, 255, 255, .86);
+            font-size: .75rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
             user-select: none;
             white-space: nowrap;
         }
-        
-        /* 全屏模式下控制栏显示的微调 */
-        #player-container:fullscreen .art-control-volume-percentage,
-        #player-container:-webkit-full-screen .art-control-volume-percentage,
-        #player-container:-moz-full-screen .art-control-volume-percentage,
-        #player-container:-ms-fullscreen .art-control-volume-percentage {
-            font-size: 1rem;
-            margin: 0 0.5rem;
-        }
-        
-        /* ArtPlayer 控制栏在全屏下的梯度背景 */
-        .art-video-player:fullscreen .art-controls,
-        .art-video-player:-webkit-full-screen .art-controls,
-        .art-video-player:-moz-full-screen .art-controls,
-        .art-video-player:-ms-fullscreen .art-controls {
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent) !important;
-        }
-        
-        /* 加载容器在全屏下的层级 */
-        #loading-container:fullscreen,
-        #loading-container:-webkit-full-screen,
-        #loading-container:-moz-full-screen,
-        #loading-container:-ms-fullscreen {
-            z-index: 9997;
-        }
 
         /* --- Volume Slider Styles --- */
-        .art-control-volume-slider {
+        #player-container .art-control-volume-slider {
             display: flex;
+            flex: 0 1 auto;
             align-items: center;
-            width: 120px;
-            height: 100%;
-            margin-left: 10px;
+            width: clamp(72px, 8vw, 120px);
+            height: 36px;
+            margin: 0 5px 0 2px;
             cursor: pointer;
             position: relative;
             outline: none;
+            touch-action: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .volume-slider-track {
+        #player-container .volume-slider-track {
             width: 100%;
-            height: 8px;
-            background: #99999980;
-            border-radius: 4px;
+            height: 6px;
+            background: rgba(255, 255, 255, .28);
+            border-radius: 999px;
             position: relative;
-            /* overflow: hidden;  Remove overflow hidden so thumb can protrude if needed, though thumb is small enough */
         }
 
-        .volume-slider-fill {
+        #player-container .volume-slider-fill {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0 auto 0 0;
             height: 100%;
-            background: #7d98a1;
-            border-radius: 4px;
+            background: #a9d1d0;
+            border-radius: inherit;
             width: 0%;
             pointer-events: none;
         }
 
-        .volume-slider-thumb {
-            width: 16px;
-            height: 16px;
-            background: #a9b4c2;
+        #player-container .volume-slider-thumb {
+            width: 14px;
+            height: 14px;
+            background: #f3fbfa;
+            border: 2px solid #7d98a1;
             border-radius: 50%;
             position: absolute;
             top: 50%;
             left: 0%;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            box-shadow: 0 0 2px rgba(0,0,0,0.3);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
         }
 
-        /* Transition for non-dragging updates */
-        .art-control-volume-slider:not(.is-dragging) .volume-slider-fill,
-        .art-control-volume-slider:not(.is-dragging) .volume-slider-thumb {
-            transition: width 300ms ease-out, left 300ms ease-out;
+        #player-container .art-control-volume-slider:not(.is-dragging) .volume-slider-fill,
+        #player-container .art-control-volume-slider:not(.is-dragging) .volume-slider-thumb {
+            transition: width .2s ease-out, left .2s ease-out, transform .15s ease;
         }
 
-        /* Hover/Active Feedback */
-        .art-control-volume-slider:hover .volume-slider-thumb,
-        .art-control-volume-slider:focus .volume-slider-thumb,
-        .art-control-volume-slider.is-dragging .volume-slider-thumb {
+        #player-container .art-control-volume-slider:hover .volume-slider-thumb,
+        #player-container .art-control-volume-slider:focus-visible .volume-slider-thumb,
+        #player-container .art-control-volume-slider.is-dragging .volume-slider-thumb {
             transform: translate(-50%, -50%) scale(1.2);
         }
 
-        /* Muted State */
-        .art-control-volume-slider.is-muted {
-            opacity: 0.5;
-            /* cursor: not-allowed;  User requested disabled style, but interaction might still be needed to unmute. Keeping pointer. */
+        #player-container .art-control-volume-slider.is-muted {
+            opacity: .65;
         }
 
-        /* Settings Panel Customization */
-        .art-setting {
-            top: auto !important;
-            bottom: 50px !important;
-            left: auto !important;
-            right: 60px !important;
+        /* 设置浮层始终在右侧控制组上方，内容过长时自身滚动 */
+        #player-container .art-settings .art-setting-inner {
+            top: auto;
+            bottom: 50px;
+            right: 10px;
+            width: min(300px, calc(100vw - 24px));
+            height: auto !important;
+            max-height: min(70vh, 360px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, .35);
         }
+
+        #player-container .art-settings .art-setting-inner .art-setting-body {
+            height: auto;
+            max-height: min(70vh, 360px);
+        }
+
+        @media (max-width: 680px) {
+            #player-container .art-bottom { padding: 38px 8px 5px !important; }
+            #player-container .art-control { min-width: 32px; width: 32px; }
+            #player-container .art-control-volume-percentage { display: none; }
+            #player-container .art-control-volume-slider { width: clamp(62px, 18vw, 86px); margin-right: 2px; }
+            #player-container .art-settings .art-setting-inner { right: 6px; width: min(300px, calc(100vw - 16px)); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #player-container .art-control,
+            #player-container .art-progress,
+            #player-container .volume-slider-fill,
+            #player-container .volume-slider-thumb { transition: none !important; }
+        }
+
+        /* 加载容器在全屏下的层级 */
+        #loading-container:fullscreen,
+        #loading-container:-webkit-full-screen,
+        #loading-container:-moz-full-screen,
+        #loading-container:-ms-fullscreen { z-index: 9997; }
     </style>
     <link rel="stylesheet" href="/assets/neofantasy-theme.css">
 </head>
@@ -479,6 +493,8 @@
         const VOLUME_STEP = 0.1; 
         let volumePercentageControl = null;
         let volumeSliderUpdate = null;
+        const CONTROL_IDLE_DELAY = 3000;
+        let controlsHideTimer = null;
         
         // 更新控制栏上的音量百分比显示
         function updateVolumeDisplay() {
@@ -512,6 +528,36 @@
             syncVolumeUI();
             console.log('音量已调整至:', Math.round(nextVolume * 100) + '%');
         }
+
+        function clearControlsHideTimer() {
+            if (controlsHideTimer) {
+                clearTimeout(controlsHideTimer);
+                controlsHideTimer = null;
+            }
+        }
+
+        function keepControlsVisible() {
+            if (!artPlayer || !artPlayer.controls) return;
+            clearControlsHideTimer();
+            artPlayer.controls.show = true;
+        }
+
+        function resetControlsHideTimer() {
+            if (!artPlayer || !artPlayer.controls) return;
+            clearControlsHideTimer();
+            artPlayer.controls.show = true;
+
+            if (!artPlayer.playing) return;
+
+            controlsHideTimer = setTimeout(() => {
+                if (!artPlayer || !artPlayer.controls) return;
+                const settingVisible = Boolean(artPlayer.setting && artPlayer.setting.show);
+                const contextmenuVisible = Boolean(artPlayer.contextmenu && artPlayer.contextmenu.show);
+                if (artPlayer.playing && !settingVisible && !contextmenuVisible) {
+                    artPlayer.controls.show = false;
+                }
+            }, CONTROL_IDLE_DELAY);
+        }
         
         // 从 URL 获取参数
         function getUrlParams() {
@@ -528,6 +574,7 @@
         
         // 显示错误信息
         function showError(title, message, icon = '❌') {
+            clearControlsHideTimer();
             if (hlsInstance) {
                 hlsInstance.destroy();
                 hlsInstance = null;
@@ -561,11 +608,15 @@
         function initPlayer(streamUrl, showId) {
             hideLoading();
             document.getElementById('player-container').style.display = 'block';
+            volumePercentageControl = null;
+            volumeSliderUpdate = null;
+            clearControlsHideTimer();
             
             artPlayer = new Artplayer({
                 container: '#player-container',
                 url: streamUrl,
                 theme: '#7d98a1',
+                lang: (navigator.language || 'zh-cn').toLowerCase(),
                 type: 'm3u8',
                 customType: {
                     m3u8: function(video, url) {
@@ -606,8 +657,9 @@
                 // 基本设置
                 autoplay: true,
                 autoSize: true,  // 启用自动尺寸同步
-                autoMini: false,
+                autoMini: true,
                 loop: false,
+                isLive: false,
                 volume: 0.7,
                 muted: false,
                 
@@ -619,15 +671,16 @@
                 setting: true,
                 hotkey: false,  // 禁用内置快捷键，使用自定义键盘监听器
                 pip: true,
+                airplay: true,
+                miniProgressBar: true,
                 mutex: true,
+                backdrop: true,
+                playsInline: true,
                 fullscreen: true,
                 fullscreenWeb: true,
                 
                 // 禁用原生提示通知（仅保留自定义音量显示）
                 notices: false,
-                
-                // 音量控件
-                volume: 0.7,
                 
                 // 字幕设置
                 subtitle: {
@@ -643,6 +696,7 @@
                     preload: 'auto',
                     'webkit-playsinline': true,
                     'playsinline': true,
+                    crossOrigin: 'anonymous',
                 },
                 
                 // 设置选项
@@ -665,12 +719,11 @@
                     },
                 ],
                 
-                // 自定义控制栏 - 在音量图标右侧显示音量百分比
-                // position: 'left' 位置在左侧，index: 11 确保在音量图标（index 10）之后
+                // 自定义控制栏：播放、音量、百分比、滑杆、时间依次排列在左侧
                 controls: [
                     {
                         position: 'left',
-                        index: 11,
+                        index: 25,
                         html: '<div class="art-control-volume-percentage">--</div>',
                         name: 'volumePercentage',
                         tooltip: '当前音量',
@@ -687,7 +740,7 @@
                     },
                     {
                         position: 'left',
-                        index: 12,
+                        index: 26,
                         html: `
                             <div class="art-control-volume-slider" tabindex="0" aria-label="Volume Slider" role="slider" aria-valuemin="0" aria-valuemax="100">
                                 <div class="volume-slider-track">
@@ -710,6 +763,7 @@
                                 fill.style.width = `${percent}%`;
                                 thumb.style.left = `${percent}%`;
                                 slider.setAttribute('aria-valuenow', Math.round(percent));
+                                slider.setAttribute('aria-valuetext', `${Math.round(percent)}%`);
                                 
                                 const isMuted = volume === 0 || (artPlayer && artPlayer.muted);
                                 if (isMuted) {
@@ -851,6 +905,22 @@
             
             artPlayer.on('ready', () => {
                 console.log('Player is ready');
+
+                // ArtPlayer 默认也会在 3 秒后收起控制栏；这里用同一时长补充触摸、键盘和自定义控件场景。
+                const playerRoot = artPlayer.template && artPlayer.template.$player;
+                if (playerRoot) {
+                    ['pointermove', 'pointerdown', 'touchstart', 'focusin'].forEach((eventName) => {
+                        playerRoot.addEventListener(eventName, resetControlsHideTimer, { passive: true });
+                    });
+                }
+                artPlayer.on('video:playing', resetControlsHideTimer);
+                artPlayer.on('video:pause', keepControlsVisible);
+                artPlayer.on('video:ended', keepControlsVisible);
+                artPlayer.on('setting', (visible) => {
+                    if (visible) keepControlsVisible();
+                    else resetControlsHideTimer();
+                });
+                resetControlsHideTimer();
                 
                 // 在 ready 阶段，volumePercentageControl 可能还未通过 mounted 回调初始化
                 // 这里作为备用方案确保获取正确的引用
@@ -909,24 +979,23 @@
                 const adjustSettingPosition = () => {
                     const settingBtn = artPlayer.template.$controls.querySelector('.art-control-setting');
                     const settingPanel = artPlayer.template.$setting;
+                    const settingInner = settingPanel && settingPanel.querySelector('.art-setting-inner');
                     const controls = artPlayer.template.$controls;
                     
-                    if (settingBtn && settingPanel && controls) {
+                    if (settingBtn && settingPanel && settingInner && controls) {
                         const playerRect = artPlayer.template.$player.getBoundingClientRect();
                         const btnRect = settingBtn.getBoundingClientRect();
                         const controlsRect = controls.getBoundingClientRect();
                         
                         // 计算右边距：播放器右边 - 齿轮按钮右边
-                        const rightDist = playerRect.right - btnRect.right;
+                        const rightDist = Math.max(8, playerRect.right - btnRect.right);
                         
                         // 计算底部边距：(播放器底部 - 控制栏顶部) + 5px
                         // 这样浮框底部就会比控制栏顶部高 5px
-                        const bottomDist = (playerRect.bottom - controlsRect.top) + 5;
+                        const bottomDist = Math.max(48, (playerRect.bottom - controlsRect.top) + 5);
                         
-                        settingPanel.style.right = `${rightDist}px`;
-                        settingPanel.style.bottom = `${bottomDist}px`;
-                        settingPanel.style.left = 'auto';
-                        settingPanel.style.top = 'auto';
+                        settingInner.style.right = `${rightDist}px`;
+                        settingInner.style.bottom = `${bottomDist}px`;
                     }
                 };
 
@@ -942,6 +1011,11 @@
                         setTimeout(adjustSettingPosition, 50);
                     });
                 }
+
+                artPlayer.on('setting', () => {
+                    requestAnimationFrame(adjustSettingPosition);
+                    setTimeout(adjustSettingPosition, 60);
+                });
                 
                 // 初始调用
                 setTimeout(adjustSettingPosition, 100);
@@ -958,6 +1032,7 @@
         }
 
         function handleKicked(message = '您的账号已在其他设备登录，当前播放已停止。') {
+            clearControlsHideTimer();
             if (heartbeatTimer) {
                 clearInterval(heartbeatTimer);
                 heartbeatTimer = null;
@@ -1102,6 +1177,12 @@
         // 键盘快捷键
         document.addEventListener('keydown', function(e) {
             if (!artPlayer) return;
+
+            const target = e.target;
+            if (target && (target.matches('input, textarea, select, button, [contenteditable="true"]') || target.closest('.art-settings'))) {
+                return;
+            }
+            resetControlsHideTimer();
             
             // 防止默认滚动行为
             const preventScrollKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
@@ -1166,6 +1247,7 @@
         
         // 页面关闭前清理
         window.addEventListener('beforeunload', () => {
+            clearControlsHideTimer();
             if (heartbeatTimer) {
                 clearInterval(heartbeatTimer);
                 heartbeatTimer = null;

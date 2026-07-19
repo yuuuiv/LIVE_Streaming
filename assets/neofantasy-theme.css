@@ -42,9 +42,9 @@
     --nf-paper: var(--nf-bg);
     --nf-line: var(--nf-border);
 
-    --nf-font-display: 'Noto Sans SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
-    --nf-font-ui: 'Noto Sans SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
-    --nf-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+    --nf-font-display: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --nf-font-ui: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --nf-font-mono: 'JetBrains Mono', 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
     --nf-radius-sm: 8px;
     --nf-radius: 12px;
     --nf-radius-lg: 18px;
@@ -108,6 +108,21 @@ input,
 select,
 textarea {
     font-family: var(--nf-font-ui) !important;
+}
+
+/* Keep dynamically-rendered admin content and Tailwind utility elements on
+   the same loaded font stack instead of allowing browser serif defaults to
+   leak into modal/table content. Specific mono rules below still opt in to
+   JetBrains Mono for IDs, timestamps and operational labels. */
+.admin-page,
+.admin-page *,
+.admin-page *::before,
+.admin-page *::after {
+    font-family: var(--nf-font-ui);
+}
+.admin-page .font-mono,
+.admin-page [data-font="mono"] {
+    font-family: var(--nf-font-mono) !important;
 }
 
 body {
@@ -593,7 +608,10 @@ body.nf-site main > *:nth-child(3) { animation-delay: .12s; }
 .status-pill--pending { background: var(--nf-accent-soft); color: var(--nf-accent-strong); }
 .status-pill--live    { background: var(--nf-danger-soft); color: var(--nf-danger); }
 .status-pill--ended   { background: var(--nf-surface-2);   color: var(--nf-text-muted); }
-.admin-show-edit-dialog { width: min(100%, 660px); max-height: min(90vh, 52rem); overflow-y: auto; }
+.admin-show-edit-dialog { display: flex; width: min(100%, 660px); max-height: min(calc(100vh - 2rem), 52rem); max-height: min(calc(100dvh - 2rem), 52rem); flex-direction: column; overflow: hidden; }
+.admin-show-edit-dialog .admin-confirm-head,
+.admin-show-edit-dialog .admin-confirm-actions { flex: none; }
+.admin-show-edit-dialog .admin-edit-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
 .admin-edit-id-field { opacity: .6; cursor: default; }
 .admin-edit-required { color: var(--nf-danger); }
 .admin-edit-body { padding: var(--nf-sp-5); }
@@ -706,12 +724,13 @@ body.admin-modal-open { overflow: hidden; }
 .admin-status-pill.is-inactive { background: var(--nf-surface-2); color: var(--nf-text-faint); }
 .admin-table-action { min-height: 30px; padding: 5px 9px !important; font-size: 11px; }
 .admin-table-empty { padding: 30px !important; color: var(--nf-text-faint); text-align: center; }
-.admin-user-detail-dialog { width: min(100%, 590px); }
+.admin-user-detail-dialog { display: flex; width: min(100%, 590px); flex-direction: column; overflow: hidden; }
+.admin-user-detail-dialog .admin-confirm-head { flex: none; }
 .admin-user-detail-dialog .admin-confirm-head { position: relative; padding-right: 52px; }
 .admin-user-detail-mark svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .admin-modal-close { position: absolute; top: 14px; right: 16px; display: inline-grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--nf-border); border-radius: var(--nf-radius-sm); background: var(--nf-surface-2); color: var(--nf-text-muted); font-size: 22px; line-height: 1; cursor: pointer; }
 .admin-modal-close:hover { border-color: var(--nf-accent); color: var(--nf-text); }
-.admin-user-detail-body { display: grid; gap: var(--nf-sp-4); max-height: min(65vh, 38rem); overflow-y: auto; padding: var(--nf-sp-5); }
+.admin-user-detail-body { display: grid; min-height: 0; flex: 1 1 auto; gap: var(--nf-sp-4); overflow-y: auto; overscroll-behavior: contain; padding: var(--nf-sp-5); }
 .admin-detail-profile { display: flex; align-items: center; gap: 12px; }
 .admin-detail-avatar { width: 46px; height: 46px; border-radius: 14px; font-size: 16px; }
 .admin-detail-profile > div { min-width: 0; flex: 1; }
@@ -832,10 +851,10 @@ body.admin-modal-open { overflow: hidden; }
 .admin-import-feedback--success { border-left-color: var(--nf-success); background: var(--nf-success-soft); color: var(--nf-success); }
 .admin-import-feedback--error { border-left-color: var(--nf-danger); background: var(--nf-danger-soft); color: var(--nf-danger); }
 
-.admin-confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: var(--nf-sp-4); background: var(--nf-scrim); opacity: 0; backdrop-filter: blur(0); transition: opacity var(--nf-dur) var(--nf-ease-out), backdrop-filter var(--nf-dur); }
+.admin-confirm-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow-y: auto; overscroll-behavior: contain; padding: var(--nf-sp-4); background: var(--nf-scrim); opacity: 0; backdrop-filter: blur(0); transition: opacity var(--nf-dur) var(--nf-ease-out), backdrop-filter var(--nf-dur); }
 .admin-confirm-overlay.hidden { display: none; }
 .admin-confirm-overlay.is-open { opacity: 1; backdrop-filter: blur(4px); }
-.admin-confirm-dialog { width: min(100%, 520px); min-width: 0; overflow: hidden; border: 1px solid var(--nf-border); border-radius: var(--nf-radius-lg); background: var(--nf-surface); box-shadow: var(--nf-shadow-lg); opacity: 0; transform: translateY(16px) scale(.98); transition: opacity var(--nf-dur) var(--nf-ease-out), transform var(--nf-dur) var(--nf-ease-out); }
+.admin-confirm-dialog { width: min(100%, 520px); min-width: 0; max-height: min(calc(100vh - 2rem), 52rem); max-height: min(calc(100dvh - 2rem), 52rem); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--nf-border); border-radius: var(--nf-radius-lg); background: var(--nf-surface); box-shadow: var(--nf-shadow-lg); opacity: 0; transform: translateY(16px) scale(.98); transition: opacity var(--nf-dur) var(--nf-ease-out), transform var(--nf-dur) var(--nf-ease-out); }
 .admin-confirm-overlay.is-open .admin-confirm-dialog { opacity: 1; transform: translateY(0) scale(1); }
 .admin-confirm-head { display: flex; align-items: center; gap: var(--nf-sp-3); padding: var(--nf-sp-4) var(--nf-sp-5); border-bottom: 1px solid var(--nf-border); }
 .admin-confirm-head h2 { margin: var(--nf-sp-1) 0 0; color: var(--nf-text); font-size: 17px; font-weight: 600; }
