@@ -316,6 +316,7 @@ body.nf-site main > *:nth-child(3) { animation-delay: .12s; }
 .show-card-image img { transition: transform .45s ease; }
 .show-card:hover .show-card-image img { transform: scale(1.035); }
 .show-card p { color: var(--nf-grey) !important; }
+.show-card-start-time { margin: 0 0 .65rem; color: var(--nf-text-2) !important; font-family: var(--nf-font-mono); font-size: .72rem; line-height: 1.45; }
 .badge { border: 1px solid rgba(255,255,255,.4); box-shadow: 0 5px 18px rgba(48,45,41,.18); backdrop-filter: blur(8px); }
 .badge-live { background: var(--nf-danger) !important; color: #fff !important; }
 .badge-idle { background: color-mix(in srgb, var(--nf-text) 78%, transparent) !important; color: var(--nf-bg) !important; }

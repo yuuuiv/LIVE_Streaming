@@ -715,8 +715,24 @@
                 const parsed = new Date(`${compactDate[1]}-${compactDate[2]}-${compactDate[3]}T23:59:59+09:00`);
                 return Number.isNaN(parsed.getTime()) ? null : parsed;
             }
-            const parsed = new Date(text);
+            const hasTimezone = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(text);
+            const normalized = hasTimezone ? text : `${text.replace(' ', 'T')}Z`;
+            const parsed = new Date(normalized);
             return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        const localDateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        });
+
+        function formatLocalShowDate(value) {
+            const text = String(value || '').trim();
+            if (!text || /^(\d{4})(\d{2})(\d{2})$/.test(text)) return '';
+            const hasTimezone = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(text);
+            const normalized = hasTimezone ? text : `${text.replace(' ', 'T')}Z`;
+            const date = new Date(normalized);
+            return Number.isNaN(date.getTime()) ? '' : localDateTimeFormatter.format(date);
         }
 
         function getShowStatus(show) {
@@ -736,6 +752,7 @@
             const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true;
             const escapedTitle = escapeHtml(show.title);
             const escapedShowId = escapeHtml(show.id);
+            const localStartsAt = formatLocalShowDate(show.starts_at || show.start_time);
 
             // 申请状态
             const reqStatus = userPermissions[String(show.id)];
@@ -761,6 +778,7 @@
                 <div class="p-3 md:p-4 flex flex-col flex-1">
                     <h3 class="text-sm md:text-base font-bold mb-2 line-clamp-2">${escapedTitle}</h3>
                     <p class="show-description text-xs md:text-sm mb-3 whitespace-pre-line flex-1" style="color:var(--nf-text-muted)">${formatDescription(show.description)}</p>
+                    ${localStartsAt ? `<p class="show-card-start-time">开演时间（本地）：${escapeHtml(localStartsAt)}</p>` : ''}
                     <div class="flex justify-between items-center gap-2 mt-auto">
                         <span class="access-label text-xs md:text-sm">
                             ${requiresAuth ? '需要授权' : '公开节目'}
