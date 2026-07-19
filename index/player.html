@@ -441,14 +441,6 @@
     <link rel="stylesheet" href="/assets/neofantasy-theme.css">
 </head>
 <body class="player-page">
-    <a class="player-brand" href="/index/" aria-label="返回 NeoFantasy Live 首页">
-        <img src="/favicon/favicon.svg" alt="" width="32" height="32">
-        <span>NEOFANTASY LIVE</span>
-    </a>
-    <button type="button" class="nf-theme-toggle player-theme-toggle" data-theme-toggle aria-label="切换主题">
-        <span data-theme-icon="moon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"></path></svg></span>
-    </button>
-    
     <!-- Loading Container -->
     <div id="loading-container">
         <img class="loading-logo" src="/favicon/favicon.svg" alt="NeoFantasy 兔子标志" width="67" height="67">
@@ -480,6 +472,7 @@
         const API_BASE_URL = isDevelopment ? 'http://localhost:5000' : 'https://api.neofantasy.online';
         const TOKEN_KEY = 'nf_access_token';
         let artPlayer = null;
+        let hlsInstance = null;
         let heartbeatTimer = null;
         let sessionId = null;
         let isAuthenticated = false;
@@ -535,6 +528,10 @@
         
         // 显示错误信息
         function showError(title, message, icon = '❌') {
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
             document.getElementById('loading-container').style.display = 'none';
             document.getElementById('player-container').style.display = 'none';
             
@@ -573,14 +570,36 @@
                 customType: {
                     m3u8: function(video, url) {
                         if (Hls.isSupported()) {
-                            const hls = new Hls({
+                            hlsInstance = new Hls({
                                 enableWorker: true,
                                 lowLatencyMode: true,
                             });
-                            hls.loadSource(url);
-                            hls.attachMedia(video);
+                            hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+                                if (!data || !data.fatal) return;
+
+                                const status = data.response && data.response.code;
+                                const detail = status ? `（HTTP ${status}）` : '';
+                                const message = status === 404
+                                    ? `当前节目流尚未上线，请确认推流进程仍在运行${detail}`
+                                    : `视频清单加载失败，请稍后重试${detail}`;
+                                console.error('HLS fatal error:', data);
+                                showError(
+                                    status === 404 ? '当前流不可用' : '播放失败',
+                                    message,
+                                    '⚠️'
+                                );
+                            });
+                            hlsInstance.loadSource(url);
+                            hlsInstance.attachMedia(video);
                         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                             video.src = url;
+                            video.addEventListener('error', () => {
+                                showError(
+                                    '播放失败',
+                                    '视频清单加载失败，请稍后重试',
+                                    '⚠️'
+                                );
+                            }, { once: true });
                         }
                     }
                 },
