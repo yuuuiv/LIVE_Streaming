@@ -8,7 +8,7 @@
 
 账号由 `auth.neofantasy.online` 统一注册和认证，登录使用邮箱验证码/密码。播放器不再接受旧的用户名 token，也不会把身份信息放进播放 URL。需要权限的节目可点击“申请”，管理员在 `/admin/` 审核后才会放行。
 
-管理员控制台还支持从官方活动页 URL 解析节目：先预览主视觉、公演名、日程、出演与 Opening Act，再按 DAY 编辑并批量写入节目单。首次使用前需在 Supabase 执行 `neofantasy-api/db/show_import.sql`。
+管理员控制台还支持从官方活动页 URL 解析节目：先预览主视觉、公演名、日程、出演与 Opening Act，再按 DAY 编辑并批量写入节目单。写入完成后会立即回读 Supabase 核验每个节目 ID。部署前需在 Supabase 执行最新版 `neofantasy-api/db/show_import.sql`；旧版脚本已经执行过的环境也需要重新执行一次。
 
 部署所需的 Supabase 迁移、Vercel 环境变量和域名配置见工作区根目录的 `DEPLOYMENT_GUIDE.md`。
 

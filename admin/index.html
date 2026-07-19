@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NeoFantasy Live · 管理控制台</title>
-  <meta name="theme-color" content="#c3dfe0">
+  <meta name="theme-color" content="#eef1ef">
   <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg">
   <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="/assets/neofantasy-theme.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -18,15 +18,15 @@
         extend: {
           colors: {
             nf: {
-              blue:  '#c3dfe0', // Light Blue
-              green: '#bcd979', // Willow Green
-              olive: '#9dad6f', // Muted Olive
-              grey:  '#7d6d61', // Dim Grey
-              brown: '#5e574d', // Stone Brown
-              mist:  '#eef5f5', // 浅色页面背景（Light Blue 衍生）
-              frost: '#ddecec', // 浅色次级表面
-              leaf:  '#a9c961', // Willow Green 加深（hover）
-              coal:  '#38342e', // 主文本
+              blue:  '#a9b4c2',
+              green: '#7d98a1',
+              olive: '#4d6b76',
+              grey:  '#5e6572',
+              brown: '#1c2321',
+              mist:  '#eef1ef',
+              frost: '#f2f4f3',
+              leaf:  '#3a545e',
+              coal:  '#141a19',
             }
           }
         }
@@ -60,30 +60,48 @@
       </div>
     </div>
 
-    <section id="notice" class="admin-notice mb-4 hidden border p-4 text-sm"></section>
+    <section id="notice" class="admin-notice hidden" role="status" aria-live="polite" aria-atomic="true"></section>
     <section class="admin-card admin-import-card mb-6">
       <div class="admin-toolbar">
         <div>
-          <p class="admin-kicker">Schedule automation</p>
-          <h2 class="font-bold text-nf-brown">从活动页面加入节目单</h2>
-          <p class="mt-1 text-xs text-nf-grey">粘贴官方页面，自动提取主视觉、公演名、日程、出演，并按 DAY 生成可编辑草稿</p>
+          <p class="admin-kicker">Schedule intake</p>
+          <h2 class="admin-section-title">从活动页面加入节目单</h2>
+          <p class="admin-section-copy">粘贴官方页面，提取主视觉、公演名、日程与出演，并按 DAY 生成可编辑草稿。</p>
         </div>
+        <span class="admin-flow-badge" aria-label="处理流程：URL 到草稿，再到 Supabase">URL → DRAFT → SUPABASE</span>
       </div>
       <form id="event-import-form" class="admin-import-form">
-        <label for="event-url" class="sr-only">官方活动页面地址</label>
+        <div class="admin-stage-label"><span>01</span> 页面来源</div>
+        <label for="event-url" class="admin-control-label">官方活动页面地址</label>
         <div class="admin-import-url-row">
-          <input id="event-url" type="url" required autocomplete="url" spellcheck="false" placeholder="https://bang-dream.com/events/..." class="admin-input">
-          <button id="parse-event" type="submit" class="nf-button nf-button-primary">解析页面</button>
+          <div class="admin-url-field">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.6 13.4a4 4 0 0 0 5.66 0l2.12-2.12a4 4 0 0 0-5.66-5.66l-1.21 1.21m1.89 3.77a4 4 0 0 0-5.66 0l-2.12 2.12a4 4 0 0 0 5.66 5.66l1.2-1.2"></path></svg>
+            <input id="event-url" type="url" required autocomplete="url" spellcheck="false" placeholder="https://bang-dream.com/events/..." class="admin-input admin-url-input">
+          </div>
+          <button id="parse-event" type="submit" class="nf-button nf-button-primary admin-parse-button">
+            <span class="admin-button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg></span>
+            <span data-button-label>解析并生成草稿</span>
+            <span class="admin-button-spinner" aria-hidden="true"></span>
+          </button>
         </div>
-        <p class="admin-field-help">解析只生成预览；确认节目 ID、标题和说明后才会写入 Supabase。</p>
+        <p class="admin-field-help">此步骤只生成预览。节目 ID、标题和说明经确认后才会写入数据库。</p>
       </form>
       <div id="event-preview" class="admin-event-preview hidden" aria-live="polite">
+        <div class="admin-stage-label"><span>02</span> 核对并写入</div>
         <div id="event-source" class="admin-event-source"></div>
         <div id="event-drafts" class="admin-event-drafts"></div>
         <div class="admin-import-actions">
-          <p id="event-import-summary" class="text-sm text-nf-grey"></p>
-          <button id="import-shows" type="button" class="nf-button nf-button-accent">确认加入节目单</button>
+          <div class="admin-import-summary-wrap">
+            <span class="admin-summary-label">待写入</span>
+            <p id="event-import-summary"></p>
+          </div>
+          <button id="import-shows" type="button" class="nf-button nf-button-primary admin-import-button">
+            <span class="admin-button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="7" ry="3"></ellipse><path d="M5 5v6c0 1.66 3.13 3 7 3s7-1.34 7-3V5M5 11v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"></path></svg></span>
+            <span data-button-label>确认加入节目单</span>
+            <span class="admin-button-spinner" aria-hidden="true"></span>
+          </button>
         </div>
+        <div id="event-import-feedback" class="admin-import-feedback hidden" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1"></div>
       </div>
     </section>
 
@@ -113,6 +131,26 @@
       <div id="empty" class="hidden p-10 text-center text-sm text-nf-grey">当前筛选条件下暂无申请</div>
     </section>
   </main>
+  <div id="import-confirm-modal" class="admin-confirm-overlay hidden" aria-hidden="true">
+    <section class="admin-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="import-confirm-title" aria-describedby="import-confirm-description">
+      <div class="admin-confirm-head">
+        <span class="admin-confirm-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"></path></svg></span>
+        <div>
+          <p class="admin-kicker">Final check</p>
+          <h2 id="import-confirm-title">写入节目单？</h2>
+        </div>
+      </div>
+      <p id="import-confirm-description" class="admin-confirm-copy"></p>
+      <div class="admin-confirm-note"><span aria-hidden="true">i</span> 相同节目 ID 会更新现有记录；写入后系统会立即回读 Supabase 核验结果。</div>
+      <div class="admin-confirm-actions">
+        <button id="cancel-import" type="button" class="nf-button nf-button-secondary">返回检查</button>
+        <button id="confirm-import" type="button" class="nf-button nf-button-primary">
+          <span data-button-label>写入并核验</span>
+          <span class="admin-button-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </section>
+  </div>
 <script>
   const API = 'https://api.neofantasy.online';
   const AUTH = 'https://auth.neofantasy.online';
@@ -127,18 +165,39 @@
   const notice = (message, error = false) => {
     const el = document.getElementById('notice');
     el.textContent = message;
-    el.className = `admin-notice mb-4 border p-4 text-sm ${error ? 'border-nf-grey bg-nf-brown/10 text-nf-brown' : 'border-nf-olive bg-nf-green/20 text-nf-brown'}`;
+    el.className = `admin-notice admin-notice--${error ? 'error' : 'success'}`;
     el.classList.remove('hidden');
+  };
+  const readResponse = async (response) => {
+    const body = await response.text();
+    if (!body) return {};
+    try { return JSON.parse(body); }
+    catch (_) { return { error: body.slice(0, 300) }; }
+  };
+  const setButtonState = (button, loading, label) => {
+    button.disabled = loading;
+    button.setAttribute('aria-busy', String(loading));
+    button.classList.toggle('is-loading', loading);
+    const labelNode = button.querySelector('[data-button-label]');
+    if (labelNode && label) labelNode.textContent = label;
+  };
+  const importFeedback = (message, type = 'success') => {
+    const el = document.getElementById('event-import-feedback');
+    el.textContent = message;
+    el.className = `admin-import-feedback admin-import-feedback--${type}`;
+    el.focus({ preventScroll: true });
   };
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
   const statusText = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
   const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' });
   let importDrafts = [];
   let importSource = null;
+  let pendingImportDrafts = [];
+  let modalReturnFocus = null;
 
   async function verifyAdmin() {
     const response = await fetch(`${AUTH}/api/session/me`, { headers: headers(), credentials: 'include' });
-    const data = await response.json();
+    const data = await readResponse(response);
     if (!response.ok || data.user?.role !== 'admin') throw new Error('当前账号不是管理员');
     document.getElementById('identity').textContent = `已登录：${data.user.email} · 管理员`;
   }
@@ -147,7 +206,7 @@
     const filter = document.getElementById('status-filter').value;
     const suffix = filter ? `?status=${encodeURIComponent(filter)}` : '';
     const response = await request(`/api/admin/permission-requests${suffix}`);
-    const data = await response.json();
+    const data = await readResponse(response);
     if (!response.ok) throw new Error(data.error || '获取申请失败');
     const rows = data.requests || [];
     const body = document.getElementById('requests');
@@ -167,7 +226,7 @@
     const reviewNote = prompt(status === 'approved' ? '备注（可选）' : '拒绝原因（可选）', '')
     if (reviewNote === null) return;
     const response = await request(`/api/admin/permission-requests/${encodeURIComponent(id)}/review`, { method: 'POST', body: JSON.stringify({ status, review_note: reviewNote }) });
-    const data = await response.json();
+    const data = await readResponse(response);
     if (!response.ok) return notice(data.error || '审核失败', true);
     notice(status === 'approved' ? '已通过申请并授予节目权限。' : '已拒绝申请。');
     await loadRequests();
@@ -195,9 +254,10 @@
     const preview = document.getElementById('event-preview');
     const source = document.getElementById('event-source');
     const drafts = document.getElementById('event-drafts');
+    source.classList.toggle('has-image', Boolean(importSource?.image_url));
     source.innerHTML = `
       ${importSource?.image_url ? `<img src="${escapeHtml(importSource.image_url)}" alt="${escapeHtml(importSource.title || '活动主视觉')}" referrerpolicy="no-referrer">` : ''}
-      <div><span class="status-pill">解析完成</span><h3>${escapeHtml(importSource?.title || '活动页面')}</h3><p>${escapeHtml(importSource?.venue || '未识别会场')} · ${escapeHtml(importSource?.performers || '未识别出演')}</p></div>`;
+      <div><span class="status-pill">解析完成</span><h3>${escapeHtml(importSource?.title || '活动页面')}</h3><p>${escapeHtml(importSource?.venue || '未识别会场')} · ${escapeHtml(importSource?.performers || '未识别出演')}</p><a href="${escapeHtml(importSource?.url || '#')}" target="_blank" rel="noopener noreferrer">查看来源页面 ↗</a></div>`;
     drafts.innerHTML = importDrafts.map((show, index) => `
       <article class="admin-show-draft" data-index="${index}">
         <div class="admin-show-draft-heading"><span>${escapeHtml(show.event_day || `节目 ${index + 1}`)}</span><time>${escapeHtml(japanDateTimeLocal(show.starts_at).replace('T', ' '))} JST</time></div>
@@ -215,12 +275,22 @@
         </div>
       </article>`).join('');
     document.getElementById('event-import-summary').textContent = `将写入 ${importDrafts.length} 个节目；相同 ID 会更新现有节目。`;
+    document.getElementById('event-import-feedback').className = 'admin-import-feedback hidden';
+    const actionButton = document.getElementById('import-shows');
+    actionButton.classList.remove('is-success');
+    setButtonState(actionButton, false, '确认加入节目单');
     preview.classList.remove('hidden');
     preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function collectEventDrafts() {
-    return [...document.querySelectorAll('.admin-show-draft')].map((card, index) => {
+    const invalidField = document.querySelector('.admin-show-draft :invalid');
+    if (invalidField) {
+      invalidField.focus();
+      invalidField.reportValidity();
+      throw new Error('请先补全标记为必填的节目字段。');
+    }
+    const shows = [...document.querySelectorAll('.admin-show-draft')].map((card, index) => {
       const original = importDrafts[index] || {};
       const value = (field) => card.querySelector(`[data-field="${field}"]`)?.value.trim() || '';
       return {
@@ -235,61 +305,107 @@
         is_live: card.querySelector('[data-field="is_live"]').checked,
       };
     });
+    const duplicateIds = shows.map((show) => show.id).filter((id, index, ids) => ids.indexOf(id) !== index);
+    if (duplicateIds.length) throw new Error(`节目 ID 重复：${[...new Set(duplicateIds)].join(', ')}`);
+    if (shows.some((show) => !show.starts_at)) throw new Error('请为每个节目填写有效的开演时间。');
+    return shows;
   }
 
   async function previewEventImport(event) {
     event.preventDefault();
     const button = document.getElementById('parse-event');
     const url = document.getElementById('event-url').value.trim();
-    button.disabled = true;
-    button.textContent = '解析中…';
+    setButtonState(button, true, '正在解析页面');
     try {
       const response = await request('/api/admin/shows/preview-import', { method: 'POST', body: JSON.stringify({ url }) });
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) throw new Error(data.error || '页面解析失败');
       renderEventPreview(data);
-      notice(`已解析 ${data.shows?.length || 0} 个节目草稿，请检查后确认导入。`);
+      importFeedback(`已解析 ${data.shows?.length || 0} 个节目草稿，请检查后确认写入。`, 'success');
     } catch (error) {
       notice(error.message || '页面解析失败', true);
     } finally {
-      button.disabled = false;
-      button.textContent = '解析页面';
+      setButtonState(button, false, '解析并生成草稿');
     }
   }
 
-  async function importShows() {
-    const button = document.getElementById('import-shows');
-    const shows = collectEventDrafts();
-    if (!shows.length) return notice('没有可导入的节目草稿', true);
-    if (!confirm(`确认将 ${shows.length} 个节目写入节目单吗？相同 ID 的节目会被更新。`)) return;
-    button.disabled = true;
-    button.textContent = '写入中…';
+  function openImportConfirmation() {
+    try {
+      pendingImportDrafts = collectEventDrafts();
+      if (!pendingImportDrafts.length) return importFeedback('没有可导入的节目草稿。', 'error');
+    } catch (error) {
+      return importFeedback(error.message || '节目草稿检查失败。', 'error');
+    }
+    modalReturnFocus = document.activeElement;
+    const modal = document.getElementById('import-confirm-modal');
+    document.getElementById('import-confirm-description').textContent = `即将写入 ${pendingImportDrafts.length} 个节目。确认后会同步节目元数据并核验每个节目 ID。`;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('admin-modal-open');
+    requestAnimationFrame(() => {
+      modal.classList.add('is-open');
+      document.getElementById('confirm-import').focus();
+    });
+  }
+
+  function closeImportConfirmation({ restoreFocus = true, force = false } = {}) {
+    const modal = document.getElementById('import-confirm-modal');
+    if (!force && document.getElementById('confirm-import').disabled) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('admin-modal-open');
+    window.setTimeout(() => modal.classList.add('hidden'), 240);
+    if (restoreFocus && modalReturnFocus instanceof HTMLElement) modalReturnFocus.focus();
+  }
+
+  async function confirmImportShows() {
+    const button = document.getElementById('confirm-import');
+    const actionButton = document.getElementById('import-shows');
+    const shows = pendingImportDrafts;
+    setButtonState(button, true, '正在写入并核验');
+    setButtonState(actionButton, true, '正在写入节目单');
     try {
       const response = await request('/api/admin/shows/import', {
         method: 'POST',
         body: JSON.stringify({ source_url: importSource?.url || '', shows }),
       });
-      const data = await response.json();
+      const data = await readResponse(response);
       if (!response.ok) throw new Error(data.error || '节目导入失败');
+      if (data.verified !== true || Number(data.count) !== shows.length) throw new Error('服务器未返回完整的写入核验结果。');
       importDrafts = data.shows || shows;
-      notice(`已成功加入 ${data.count || shows.length} 个节目。`);
-      document.getElementById('event-import-summary').textContent = `已写入 ${data.count || shows.length} 个节目，可返回首页查看。`;
+      closeImportConfirmation({ restoreFocus: false, force: true });
+      const inserted = Number(data.inserted_count || 0);
+      const updated = Number(data.updated_count || 0);
+      const detail = [inserted && `新增 ${inserted} 个`, updated && `更新 ${updated} 个`].filter(Boolean).join('，');
+      importFeedback(`写入完成并已通过数据库核验：${detail || `${data.count} 个节目`}。`, 'success');
+      document.getElementById('event-import-summary').textContent = `已核验 ${data.count} 个节目，可立即返回首页查看。`;
+      actionButton.classList.add('is-success');
+      setButtonState(actionButton, false, '已加入节目单');
     } catch (error) {
-      notice(error.message || '节目导入失败', true);
+      closeImportConfirmation({ restoreFocus: false, force: true });
+      importFeedback(error.message || '节目导入失败。', 'error');
+      setButtonState(actionButton, false, '重新尝试写入');
     } finally {
-      button.disabled = false;
-      button.textContent = '确认加入节目单';
+      setButtonState(button, false, '写入并核验');
     }
   }
 
   async function init() {
     try { await verifyAdmin(); await loadRequests(); }
-    catch (error) { notice(error.message || '无法加载控制台', true); document.getElementById('requests').innerHTML = ''; }
+    catch (error) { notice(error.message || '控制台加载失败', true); document.getElementById('requests').innerHTML = ''; }
   }
   document.getElementById('refresh').onclick = init;
   document.getElementById('status-filter').onchange = loadRequests;
   document.getElementById('event-import-form').onsubmit = previewEventImport;
-  document.getElementById('import-shows').onclick = importShows;
+  document.getElementById('import-shows').onclick = openImportConfirmation;
+  document.getElementById('cancel-import').onclick = () => closeImportConfirmation();
+  document.getElementById('confirm-import').onclick = confirmImportShows;
+  document.getElementById('import-confirm-modal').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) closeImportConfirmation();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && document.getElementById('import-confirm-modal').classList.contains('is-open')) closeImportConfirmation();
+  });
   init();
 </script>
 </body>

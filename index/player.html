@@ -13,18 +13,18 @@
     <link rel="manifest" href="/favicon/site.webmanifest">
     
     <!-- Theme Color - synchronized with the selected site theme -->
-    <meta name="theme-color" content="#c3dfe0">
+    <meta name="theme-color" content="#eef1ef">
     
     <!-- Apple Mobile Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Windows Tiles -->
-    <meta name="msapplication-TileColor" content="#c3dfe0">
+    <meta name="msapplication-TileColor" content="#eef1ef">
     <script src="/assets/neofantasy-theme.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -35,14 +35,14 @@
             extend: {
                 colors: {
                     nf: {
-                        blue:  '#c3dfe0', // Light Blue
-                        green: '#bcd979', // Willow Green
-                        olive: '#9dad6f', // Muted Olive
-                        grey:  '#7d6d61', // Dim Grey
-                        brown: '#5e574d', // Stone Brown
-                        mist:  '#eef5f5', // 浅色页面背景（Light Blue 衍生）
-                        coal:  '#38342e', // 暗色页面背景 / 浅色主文本
-                        cream: '#f2efe8', // 暗色模式主文本
+                        blue:  '#a9b4c2',
+                        green: '#7d98a1',
+                        olive: '#4d6b76',
+                        grey:  '#5e6572',
+                        brown: '#1c2321',
+                        mist:  '#eef1ef',
+                        coal:  '#141a19',
+                        cream: '#eef1ef',
                     }
                 }
             }
@@ -153,8 +153,8 @@
         }
         
         .spinner {
-            border: 4px solid rgba(188, 217, 121, 0.2);
-            border-top-color: #bcd979;
+            border: 4px solid rgba(125, 152, 161, 0.2);
+            border-top-color: #7d98a1;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -184,7 +184,7 @@
         
         .back-button {
             padding: 0.75rem 2rem;
-            background: #bcd979;
+            background: #7d98a1;
             color: white;
             border: none;
             border-radius: 0.5rem;
@@ -194,11 +194,11 @@
         }
         
         .back-button:hover {
-            background: #9dad6f;
+            background: #4d6b76;
         }
 
         .back-button-red {
-            background: #7d6d61 !important;
+            background: #5e6572 !important;
         }
         .back-button-red:hover {
             background: #dc2626 !important;
@@ -312,7 +312,7 @@
         
         /* 当前进度条 */
         .art-control-progress .art-control-progress-current {
-            background-color: #bcd979 !important;
+            background-color: #7d98a1 !important;
         }
         
         /* 确保音量控件显示 */
@@ -392,7 +392,7 @@
             top: 0;
             left: 0;
             height: 100%;
-            background: #bcd979;
+            background: #7d98a1;
             border-radius: 4px;
             width: 0%;
             pointer-events: none;
@@ -401,7 +401,7 @@
         .volume-slider-thumb {
             width: 16px;
             height: 16px;
-            background: #c3dfe0;
+            background: #a9b4c2;
             border-radius: 50%;
             position: absolute;
             top: 50%;
@@ -568,7 +568,7 @@
             artPlayer = new Artplayer({
                 container: '#player-container',
                 url: streamUrl,
-                theme: '#bcd979',
+                theme: '#7d98a1',
                 type: 'm3u8',
                 customType: {
                     m3u8: function(video, url) {

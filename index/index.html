@@ -11,12 +11,12 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon/favicon-96x96.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/favicon/site.webmanifest">
-    <meta name="theme-color" content="#c3dfe0">
-    <meta name="msapplication-TileColor" content="#c3dfe0">
+    <meta name="theme-color" content="#eef1ef">
+    <meta name="msapplication-TileColor" content="#eef1ef">
     <script src="/assets/neofantasy-theme.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     
     <!-- Tailwind CSS -->
@@ -28,18 +28,18 @@
             extend: {
                 colors: {
                     nf: {
-                        blue:  '#c3dfe0', // Light Blue
-                        green: '#bcd979', // Willow Green
-                        olive: '#9dad6f', // Muted Olive
-                        grey:  '#7d6d61', // Dim Grey
-                        brown: '#5e574d', // Stone Brown
-                        mist:  '#eef5f5', // 浅色页面背景（Light Blue 衍生）
-                        frost: '#ddecec', // 浅色次级表面
-                        leaf:  '#a9c961', // Willow Green 加深（hover）
-                        sand:  '#b5aa9e', // Dim Grey 提亮（暗色弱文本）
-                        bark:  '#4c463f', // 暗色卡片表面（Stone Brown 衍生）
-                        coal:  '#38342e', // 暗色页面背景 / 浅色主文本
-                        cream: '#f2efe8', // 暗色模式主文本
+                        blue:  '#a9b4c2',
+                        green: '#7d98a1',
+                        olive: '#4d6b76',
+                        grey:  '#5e6572',
+                        brown: '#1c2321',
+                        mist:  '#eef1ef',
+                        frost: '#f2f4f3',
+                        leaf:  '#3a545e',
+                        sand:  '#a9b4c2',
+                        bark:  '#222b29',
+                        coal:  '#141a19',
+                        cream: '#eef1ef',
                     }
                 }
             }
@@ -668,7 +668,7 @@
             card.className = 'show-card overflow-hidden relative';
             
             const fallbackImagePath = `/image/${encodeURIComponent(show.title)}.jpg`;
-            const imagePath = show.image_url || fallbackImagePath;
+            const imagePath = show.image_url || show.cover_url || fallbackImagePath;
             const isLive = show.is_live || false; // 数据库字段：蛇形命名
             const requiresAuth = show.requires_auth !== undefined ? show.requires_auth : true; // 数据库字段：蛇形命名
             const escapedTitle = escapeHtml(show.title);
@@ -826,7 +826,7 @@
             artPlayer = new Artplayer({
                 container: '#player-container',
                 url: url,
-                theme: '#bcd979',
+                theme: '#7d98a1',
                 type: 'm3u8',
                 customType: {
                     m3u8: function(video, url) {

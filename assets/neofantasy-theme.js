@@ -1,8 +1,8 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'nf-theme';
-    const LEGACY_STORAGE_KEY = 'theme';
+    const STORAGE_KEY = 'tm-theme';
+    const LEGACY_STORAGE_KEYS = ['nf-theme', 'theme'];
     const MODES = new Set(['system', 'light', 'dark']);
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
     const THEME_ICONS = {
@@ -14,8 +14,11 @@
         const storedMode = localStorage.getItem(STORAGE_KEY);
         if (MODES.has(storedMode)) return storedMode;
 
-        const legacyMode = localStorage.getItem(LEGACY_STORAGE_KEY);
-        return MODES.has(legacyMode) ? legacyMode : 'system';
+        for (const key of LEGACY_STORAGE_KEYS) {
+            const legacyMode = localStorage.getItem(key);
+            if (MODES.has(legacyMode)) return legacyMode;
+        }
+        return 'system';
     };
 
     const resolveMode = (mode) => (
@@ -49,13 +52,14 @@
 
         root.classList.remove('light', 'dark');
         root.classList.add(resolvedMode);
-        root.dataset.theme = currentMode;
+        root.dataset.theme = resolvedMode;
+        root.dataset.themeMode = currentMode;
         root.dataset.resolvedTheme = resolvedMode;
         root.style.colorScheme = resolvedMode;
 
         const themeColor = document.querySelector('meta[name="theme-color"]');
         if (themeColor) {
-            themeColor.setAttribute('content', resolvedMode === 'dark' ? '#302d29' : '#c3dfe0');
+            themeColor.setAttribute('content', resolvedMode === 'dark' ? '#141a19' : '#eef1ef');
         }
 
         syncControls();
@@ -71,7 +75,7 @@
         if (!MODES.has(mode)) return;
         currentMode = mode;
         localStorage.setItem(STORAGE_KEY, mode);
-        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
         applyMode({ announce: true });
     };
 
