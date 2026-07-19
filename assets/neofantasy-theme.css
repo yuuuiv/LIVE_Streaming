@@ -519,6 +519,9 @@ body.nf-site main > *:nth-child(3) { animation-delay: .12s; }
     display: block;
 }
 .site-header .nf-icon-button > svg { stroke-width: 1.9; }
+#mobile-menu-button { transform-origin: center; transition: transform var(--nf-dur) var(--nf-ease-out), background-color var(--nf-dur), color var(--nf-dur); }
+#mobile-menu-button[aria-expanded="true"] { transform: rotate(90deg); }
+#mobile-menu-button svg { transition: transform var(--nf-dur) var(--nf-ease-out); }
 .site-header button,
 .site-header a.nf-button,
 .site-header a.nf-icon-button { min-height: 0 !important; min-width: 0 !important; }
@@ -701,27 +704,7 @@ body.admin-modal-open { overflow: hidden; }
 .admin-stat-label { color: var(--nf-text-muted); font-size: 12px; font-weight: 600; }
 .admin-stat-value { color: var(--nf-text); font-family: var(--nf-font-mono); font-size: clamp(1.65rem, 3vw, 2.15rem); font-weight: 600; line-height: 1; }
 .admin-stat-meta { color: var(--nf-text-faint); font-size: 12px; }
-.admin-overview-panels { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(18rem, .75fr); gap: var(--nf-sp-3); margin-top: var(--nf-sp-3); }
-.admin-mini-panel { min-width: 0; padding: var(--nf-sp-4); border: 1px solid var(--nf-border); border-radius: var(--nf-radius-lg); background: var(--nf-surface); box-shadow: var(--nf-shadow-sm); }
-.admin-mini-panel-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--nf-sp-3); margin-bottom: var(--nf-sp-3); }
-.admin-mini-panel-heading h3 { margin: 4px 0 0; color: var(--nf-text); font-size: 16px; font-weight: 600; }
-.admin-text-button { padding: 2px 0; border: 0; background: transparent; color: var(--nf-accent-strong); cursor: pointer; font-size: 12px; font-weight: 600; }
-.admin-text-button:hover { color: var(--nf-accent); text-decoration: underline; text-underline-offset: 3px; }
-.admin-recent-users { display: grid; gap: 4px; }
-.admin-recent-user { display: flex; width: 100%; min-width: 0; align-items: center; gap: 10px; padding: 8px; border: 1px solid transparent; border-radius: var(--nf-radius); background: transparent; color: inherit; text-align: left; cursor: pointer; }
-.admin-recent-user:hover { border-color: var(--nf-border); background: var(--nf-surface-hover); }
 .admin-user-avatar, .admin-detail-avatar { display: inline-grid; width: 32px; height: 32px; flex: none; place-items: center; border-radius: 10px; background: var(--nf-accent-soft); color: var(--nf-accent-strong); font-family: var(--nf-font-mono); font-size: 12px; font-weight: 700; }
-.admin-recent-user-copy { display: grid; min-width: 0; flex: 1; gap: 2px; }
-.admin-recent-user-copy strong { overflow: hidden; color: var(--nf-text-2); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.admin-recent-user-copy small { overflow: hidden; color: var(--nf-text-faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.admin-user-status-dot { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--nf-success); box-shadow: 0 0 0 3px var(--nf-success-soft); }
-.admin-user-status-dot.is-inactive { background: var(--nf-text-faint); box-shadow: 0 0 0 3px var(--nf-surface-2); }
-.admin-workflow-list { display: grid; gap: 9px; }
-.admin-workflow-list > div { display: flex; align-items: center; gap: 10px; }
-.admin-workflow-list > div > span { display: inline-grid; width: 27px; height: 27px; flex: none; place-items: center; border-radius: 8px; background: var(--nf-accent-soft); color: var(--nf-accent-strong); font-family: var(--nf-font-mono); font-size: 10px; font-weight: 700; }
-.admin-workflow-list p { display: grid; gap: 2px; margin: 0; }
-.admin-workflow-list strong { color: var(--nf-text-2); font-size: 13px; }
-.admin-workflow-list small { color: var(--nf-text-faint); font-size: 11px; }
 .admin-users-toolbar { align-items: end; }
 .admin-users-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: end; gap: 8px; }
 .admin-search-field { display: flex; min-width: min(100%, 220px); height: 38px; align-items: center; gap: 7px; padding: 0 10px; border: 1px solid var(--nf-border-strong); border-radius: var(--nf-radius); background: var(--nf-surface-2); color: var(--nf-text-faint); }
@@ -729,7 +712,7 @@ body.admin-modal-open { overflow: hidden; }
 .admin-search-field svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .admin-search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--nf-text); font-size: 12px; }
 .admin-search-field input::placeholder { color: var(--nf-text-faint); }
-.admin-users-controls select { height: 38px; padding: 0 28px 0 10px; border: 1px solid var(--nf-border-strong); border-radius: var(--nf-radius); background: var(--nf-surface-2); color: var(--nf-text-2); font-size: 12px; }
+.admin-users-controls select { width: 112px; min-width: 112px; flex: 0 0 112px; height: 38px; padding: 0 28px 0 10px; border: 1px solid var(--nf-border-strong); border-radius: var(--nf-radius); background: var(--nf-surface-2); color: var(--nf-text-2); font-size: 12px; white-space: nowrap; }
 .admin-users-summary { padding: 10px var(--nf-sp-5); border-bottom: 1px solid var(--nf-border); color: var(--nf-text-faint); font-family: var(--nf-font-mono); font-size: 11px; }
 .admin-users-table thead th { padding: 11px var(--nf-sp-4); color: var(--nf-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .03em; }
 .admin-users-table tbody td { padding: 12px var(--nf-sp-4); color: var(--nf-text-2); vertical-align: middle; }
@@ -906,7 +889,6 @@ body.admin-modal-open { overflow: hidden; }
     .admin-overview-heading { align-items: start; flex-direction: column; }
     .admin-overview-heading .admin-compact-action { align-self: stretch; }
     .admin-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .admin-overview-panels { grid-template-columns: 1fr; }
     .admin-users-controls { align-items: stretch; justify-content: stretch; width: 100%; }
     .admin-search-field { flex: 1 1 100%; }
     .admin-users-controls select,

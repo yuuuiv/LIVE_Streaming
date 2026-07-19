@@ -114,16 +114,6 @@
         <article class="admin-stat-card"><span class="admin-stat-label">节目单</span><strong id="stat-shows-total" class="admin-stat-value">—</strong><span id="stat-shows-detail" class="admin-stat-meta">直播中 — · 已结束 —</span></article>
         <article class="admin-stat-card admin-stat-card--warning"><span class="admin-stat-label">待审核申请</span><strong id="stat-requests-pending" class="admin-stat-value">—</strong><span id="stat-requests-detail" class="admin-stat-meta">全部申请 —</span></article>
       </div>
-      <div class="admin-overview-panels">
-        <section class="admin-mini-panel" aria-labelledby="recent-users-title">
-          <div class="admin-mini-panel-heading"><div><p class="admin-kicker">Latest accounts</p><h3 id="recent-users-title">最近注册用户</h3></div><button type="button" class="admin-text-button" onclick="focusUsers()">查看全部</button></div>
-          <div id="recent-users" class="admin-recent-users"><p class="admin-muted-text">加载中…</p></div>
-        </section>
-        <section class="admin-mini-panel" aria-labelledby="admin-guide-title">
-          <div class="admin-mini-panel-heading"><div><p class="admin-kicker">Workflow</p><h3 id="admin-guide-title">管理流程</h3></div></div>
-          <div class="admin-workflow-list"><div><span>01</span><p><strong>先看总览</strong><small>确认用户与待审核数量</small></p></div><div><span>02</span><p><strong>处理申请</strong><small>审核后自动同步节目权限</small></p></div><div><span>03</span><p><strong>维护节目</strong><small>编辑节目元数据与播出状态</small></p></div></div>
-        </section>
-      </div>
     </section>
 
     <section id="users-section" class="admin-card admin-users-card mb-6" aria-labelledby="users-title">
@@ -365,20 +355,6 @@
     return Number.isNaN(date.getTime()) ? '—' : dateTimeFormatter.format(date);
   };
 
-  function renderRecentUsers(users = []) {
-    const target = document.getElementById('recent-users');
-    if (!users.length) {
-      target.innerHTML = '<p class="admin-muted-text">暂无用户记录</p>';
-      return;
-    }
-    target.innerHTML = users.map((user) => `
-      <button type="button" class="admin-recent-user" onclick="openUserDetail('${escapeHtml(String(user.id))}', this)">
-        <span class="admin-user-avatar">${escapeHtml((user.user_name || user.user_email || '?').slice(0, 1).toUpperCase())}</span>
-        <span class="admin-recent-user-copy"><strong>${escapeHtml(user.user_name || user.user_email)}</strong><small>${escapeHtml(user.user_email)} · ${escapeHtml(formatAdminDate(user.created_at))}</small></span>
-        <span class="admin-user-status-dot ${user.active === false ? 'is-inactive' : ''}" aria-label="${user.active === false ? '已停用' : '活跃'}"></span>
-      </button>`).join('');
-  }
-
   async function loadOverview() {
     const response = await request('/api/admin/overview');
     const data = await readResponse(response);
@@ -394,7 +370,6 @@
     document.getElementById('stat-shows-detail').textContent = `直播中 ${Number(shows.live || 0)} · 已结束 ${Number(shows.ended || 0)}`;
     document.getElementById('stat-requests-pending').textContent = Number(requests.pending || 0).toLocaleString('zh-CN');
     document.getElementById('stat-requests-detail').textContent = `全部申请 ${Number(requests.total || 0).toLocaleString('zh-CN')} 条`;
-    renderRecentUsers(users.recent || []);
   }
 
   async function loadUsers() {
@@ -423,11 +398,6 @@
         <td class="admin-table-time">${escapeHtml(formatAdminDate(user.updated_at))}</td>
         <td><button type="button" class="nf-button nf-button-secondary admin-table-action" onclick="openUserDetail('${escapeHtml(String(user.id))}', this)">查看详情</button></td>
       </tr>`).join('');
-  }
-
-  function focusUsers() {
-    document.getElementById('users-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    window.setTimeout(() => document.getElementById('user-search').focus(), 350);
   }
 
   let activeUserDetailId = '';
