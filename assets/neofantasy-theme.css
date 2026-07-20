@@ -710,7 +710,7 @@ body.admin-modal-open { overflow: hidden; }
 .admin-search-field svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .admin-search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--nf-text); font-size: 12px; }
 .admin-search-field input::placeholder { color: var(--nf-text-faint); }
-.admin-users-controls select { width: 112px; min-width: 112px; flex: 0 0 112px; height: 38px; padding: 0 28px 0 10px; border: 1px solid var(--nf-border-strong); border-radius: var(--nf-radius); background: var(--nf-surface-2); color: var(--nf-text-2); font-size: 12px; white-space: nowrap; }
+.admin-users-controls select { display: block; width: 124px; min-width: 124px; flex: 0 0 124px; height: 40px; padding: 0 30px 0 12px; border: 1px solid var(--nf-border-strong); border-radius: var(--nf-radius); background: var(--nf-surface-2); color: var(--nf-text-2); font-size: 13px; line-height: normal; text-align: left; text-align-last: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-users-summary { padding: 10px var(--nf-sp-5); border-bottom: 1px solid var(--nf-border); color: var(--nf-text-faint); font-family: var(--nf-font-mono); font-size: 11px; }
 .admin-users-table thead th { padding: 11px var(--nf-sp-4); color: var(--nf-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .03em; }
 .admin-users-table tbody td { padding: 12px var(--nf-sp-4); color: var(--nf-text-2); vertical-align: middle; }
@@ -873,8 +873,8 @@ body.admin-modal-open { overflow: hidden; }
     .admin-sidebar.is-open { transform: translateX(0); }
     .admin-sidebar-overlay { position: fixed; inset: 0; z-index: 19; background: var(--nf-scrim); opacity: 0; pointer-events: none; transition: opacity var(--nf-dur); }
     .admin-sidebar-overlay.is-open { display: block; opacity: 1; pointer-events: auto; }
-    .admin-mobile-menu { display: inline-grid; }
-    .admin-topbar { gap: 10px; }
+    .admin-mobile-menu { position: fixed; top: max(12px, env(safe-area-inset-top)); left: 16px; z-index: 45; display: inline-grid; box-shadow: var(--nf-shadow); }
+    .admin-topbar { gap: 10px; padding-left: 54px; }
 }
 
 @media (max-width: 640px) {

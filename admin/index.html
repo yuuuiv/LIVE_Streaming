@@ -862,6 +862,7 @@
     adminSidebar.classList.remove('is-open');
     adminSidebarOverlay.classList.remove('is-open');
     adminMobileMenu.setAttribute('aria-expanded', 'false');
+    adminMobileMenu.setAttribute('aria-label', '打开管理导航');
   }
   function selectAdminNav(key) {
     adminNavItems.forEach((item) => {
@@ -883,6 +884,7 @@
     adminSidebar.classList.toggle('is-open', open);
     adminSidebarOverlay.classList.toggle('is-open', open);
     adminMobileMenu.setAttribute('aria-expanded', String(open));
+    adminMobileMenu.setAttribute('aria-label', open ? '关闭管理导航' : '打开管理导航');
   });
   adminSidebarOverlay.addEventListener('click', closeAdminSidebar);
   const adminSectionObserver = new IntersectionObserver((entries) => {
